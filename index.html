@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
     <style>
         :root {
             --bg-primary: #f5f3f8;
@@ -71,255 +72,613 @@
             --info-soft: #1a2d3d;
         }
 
-        * { box-sizing: border-box; }
-        body {
-            background: var(--bg-primary); color: var(--text-primary);
-            font-family: 'Cairo', sans-serif; transition: background var(--transition-smooth), color var(--transition-smooth);
-            line-height: 1.7; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased; min-height: 100vh;
-            background-image: radial-gradient(ellipse at 20% 20%, rgba(108, 92, 231, 0.03) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 80%, rgba(0, 184, 148, 0.03) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 50%, rgba(116, 185, 255, 0.02) 0%, transparent 60%);
+        * {
+            box-sizing: border-box;
         }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Cairo', sans-serif;
+            transition: background var(--transition-smooth), color var(--transition-smooth);
+            line-height: 1.7;
+            letter-spacing: -0.01em;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            background-image: radial-gradient(ellipse at 20% 20%, rgba(108, 92, 231, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 184, 148, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(116, 185, 255, 0.02) 0%, transparent 60%);
+        }
+
         [data-bs-theme="dark"] body {
             background-image: radial-gradient(ellipse at 20% 20%, rgba(108, 92, 231, 0.06) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 80%, rgba(0, 184, 148, 0.05) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 50%, rgba(116, 185, 255, 0.04) 0%, transparent 60%);
+                radial-gradient(ellipse at 80% 80%, rgba(0, 184, 148, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(116, 185, 255, 0.04) 0%, transparent 60%);
         }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
 
-        .app-logo { height: 50px; filter: drop-shadow(0 2px 8px rgba(108,92,231,0.2)); border-radius: var(--radius-sm); }
-        .tab-content { background: var(--card-bg); padding: 28px 24px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); margin-bottom: 28px; border: 1px solid var(--card-border); }
-        .nav-pills { gap: 6px; padding: 8px !important; background: var(--card-bg) !important; border-radius: var(--radius-lg) !important; box-shadow: var(--shadow-md); border: 1px solid var(--card-border); flex-wrap: wrap; }
-        .nav-pills .nav-link { color: var(--text-secondary); font-weight: 600; padding: 10px 18px; border-radius: var(--radius-md); transition: all var(--transition-bounce); font-size: 0.9rem; }
-        .nav-pills .nav-link.active { background: var(--primary-gradient) !important; color: #fff !important; box-shadow: 0 6px 20px rgba(108, 92, 231, 0.35); transform: translateY(-2px); font-weight: 700; }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
 
-        .glass-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 20px 16px; transition: all var(--transition-bounce); box-shadow: var(--shadow-sm); }
-        .glass-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 10px;
+        }
 
-        .marquee-container { overflow: hidden; white-space: nowrap; background: var(--primary-gradient); color: #fff; padding: 10px 0; font-weight: 700; border-radius: var(--radius-lg); margin-bottom: 18px; }
-        .marquee-content { display: inline-block; animation: marquee 30s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
 
-        #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-primary); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(20px); }
-        .btn { border-radius: var(--radius-md) !important; font-weight: 600; }
-        .btn-primary { background: var(--primary-gradient); border: none; }
-        .btn-success { background: var(--success-gradient); border: none; }
-        .form-control, .form-select { border-radius: var(--radius-md) !important; border: 2px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-family: 'Cairo', sans-serif; }
-        .table thead th { background: var(--bg-secondary); color: var(--text-primary); font-weight: 700; }
-        .modal-content { border-radius: var(--radius-xl); }
-        .modal-header { background: var(--primary-gradient); color: #fff; }
-        .hidden { display: none !important; }
+        .app-logo {
+            height: 50px;
+            filter: drop-shadow(0 2px 8px rgba(108, 92, 231, 0.2));
+            border-radius: var(--radius-sm);
+        }
+
+        .tab-content {
+            background: var(--card-bg);
+            padding: 28px 24px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 28px;
+            border: 1px solid var(--card-border);
+        }
+
+        .nav-pills {
+            gap: 6px;
+            padding: 8px !important;
+            background: var(--card-bg) !important;
+            border-radius: var(--radius-lg) !important;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--card-border);
+            flex-wrap: wrap;
+        }
+
+        .nav-pills .nav-link {
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-bounce);
+            font-size: 0.9rem;
+        }
+
+        .nav-pills .nav-link.active {
+            background: var(--primary-gradient) !important;
+            color: #fff !important;
+            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.35);
+            transform: translateY(-2px);
+            font-weight: 700;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 20px 16px;
+            transition: all var(--transition-bounce);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+            background: var(--primary-gradient);
+            color: #fff;
+            padding: 10px 0;
+            font-weight: 700;
+            border-radius: var(--radius-lg);
+            margin-bottom: 18px;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 30s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        #lockScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(20px);
+        }
+
+        .btn {
+            border-radius: var(--radius-md) !important;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+            border: none;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: var(--radius-md) !important;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .table thead th {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .modal-content {
+            border-radius: var(--radius-xl);
+        }
+
+        .modal-header {
+            background: var(--primary-gradient);
+            color: #fff;
+        }
+
+        .hidden {
+            display: none !important;
+        }
 
         #prayerModal .modal-content {
             background: linear-gradient(135deg, #fef9e7 0%, #fdf2d0 100%);
             border: 3px solid #d4af37;
             box-shadow: 0 0 40px rgba(212, 175, 55, 0.5);
         }
+
         [data-bs-theme="dark"] #prayerModal .modal-content {
             background: linear-gradient(135deg, #2d281c 0%, #3a3324 100%);
             border-color: #d4af37;
         }
-        #prayerModal .modal-header { background: transparent; border-bottom: none; color: #8b6914; }
-        [data-bs-theme="dark"] #prayerModal .modal-header { color: #f0d070; }
-        .prayer-text { font-size: 2.2rem; font-weight: 800; color: #8b6914; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        [data-bs-theme="dark"] .prayer-text { color: #f0d070; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
-        .export-reminder { background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px solid #ff9800; border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 16px; color: #e65100; font-weight: 600; }
-        .empty-state { text-align: center; padding: 30px; background: var(--bg-secondary); border-radius: var(--radius-lg); color: var(--text-muted); border: 2px dashed var(--border-color); }
-        .invoice-thumb { max-width: 60px; max-height: 60px; border-radius: 8px; cursor: pointer; transition: transform 0.2s; object-fit: cover; }
-        .invoice-thumb:hover { transform: scale(1.1); }
+
+        #prayerModal .modal-header {
+            background: transparent;
+            border-bottom: none;
+            color: #8b6914;
+        }
+
+        [data-bs-theme="dark"] #prayerModal .modal-header {
+            color: #f0d070;
+        }
+
+        .prayer-text {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #8b6914;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-bs-theme="dark"] .prayer-text {
+            color: #f0d070;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .export-reminder {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border: 2px solid #ff9800;
+            border-radius: var(--radius-lg);
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            color: #e65100;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            color: var(--text-muted);
+            border: 2px dashed var(--border-color);
+        }
     </style>
 </head>
 <body>
     <div id="lockScreen">
-        <div class="text-center p-4 shadow rounded bg-body" style="max-width: 400px; width: 92%; background:var(--card-bg); border-radius:var(--radius-xl);">
-            <div class="mb-3"><img src="https://i.ibb.co/9mj4x6NH/Chat-GPT-Image-26-2026-06-28-40.png" alt="EgyUp Logo" style="width:110px;height:auto;border-radius:20px;"></div>
+        <div class="text-center p-4 shadow rounded bg-body"
+            style="max-width: 400px; width: 92%; background:var(--card-bg); border-radius:var(--radius-xl);">
+            <div class="mb-3"><img src="https://i.ibb.co/9mj4x6NH/Chat-GPT-Image-26-2026-06-28-40.png" alt="EgyUp Logo"
+                    style="width:110px;height:auto;border-radius:20px;"></div>
             <h3 class="mt-2 fw-bold" id="lockTitle" style="color: var(--accent);">EgyUp المالي</h3>
             <p class="text-muted small mb-3">يرجى إدخال اسم المستخدم وكلمة المرور للوصول لحساباتك</p>
-            <input type="text" id="lockUsername" class="form-control text-center mb-2" placeholder="اسم المستخدم" autocomplete="off">
-            <input type="password" id="lockPassword" class="form-control text-center mb-3" placeholder="كلمة المرور" autocomplete="off">
+            <input type="text" id="lockUsername" class="form-control text-center mb-2" placeholder="اسم المستخدم"
+                autocomplete="off">
+            <input type="password" id="lockPassword" class="form-control text-center mb-3" placeholder="كلمة المرور"
+                autocomplete="off">
             <button id="lockSubmit" class="btn btn-primary w-100 py-2 fw-bold">تسجيل الدخول</button>
-            <div id="lockError" class="alert alert-danger mt-3 small hidden" style="border-radius:12px;">اسم المستخدم أو كلمة المرور خاطئة!</div>
-            <button class="btn btn-link btn-sm text-danger mt-4 d-block w-100" onclick="clearAllData()">تصفير الذاكرة والكاش المعطوب</button>
+            <div id="lockError" class="alert alert-danger mt-3 small hidden" style="border-radius:12px;">اسم المستخدم أو كلمة
+                المرور خاطئة!</div>
+            <button class="btn btn-link btn-sm text-danger mt-4 d-block w-100"
+                onclick="localStorage.clear();location.reload();">تصفير الذاكرة والكاش المعطوب</button>
         </div>
     </div>
 
     <div id="mainApp" class="container my-4 hidden">
-        <div class="marquee-container"><div class="marquee-content">الله أكبر • الحمد لله • سبحان الله وبحمده • لا إله إلا الله • اللهم صلِّ وسلم على نبينا محمد ﷺ • لا حول ولا قوة إلا بالله</div></div>
-        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-body-tertiary rounded-3 shadow-sm" style="background:var(--card-bg);">
-            <div class="d-flex align-items-center gap-3"><img src="https://i.ibb.co/9mj4x6NH/Chat-GPT-Image-26-2026-06-28-40.png" alt="EgyUp Logo" class="app-logo"><h2 class="mb-0 fw-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">EgyUp</h2></div>
-            <div class="d-flex align-items-center gap-3"><span id="liveDateTime" class="badge py-2 px-3 small" style="background:var(--bg-secondary);color:var(--text-secondary);border-radius:20px;"></span><button class="btn btn-outline-secondary rounded-circle p-2" onclick="editCredentials()" title="تعديل بيانات الدخول" style="width:40px;height:40px;"><i class="bi bi-gear-fill"></i></button><button class="btn btn-outline-secondary rounded-circle p-2" id="darkModeBtn" onclick="toggleTheme()" style="width:40px;height:40px;"><i class="bi bi-moon-fill"></i></button></div>
+        <div class="marquee-container">
+            <div class="marquee-content">الله أكبر • الحمد لله • سبحان الله وبحمده • لا إله إلا الله • اللهم صلِّ وسلم على
+                نبينا محمد ﷺ • لا حول ولا قوة إلا بالله</div>
         </div>
-        <ul class="nav nav-pills mb-4 justify-content-center gap-1 shadow-sm p-2 bg-body rounded-3" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#dashboardTab" type="button" role="tab" onclick="calculateFinanceReport()"><i class="bi bi-pie-chart-fill"></i> المتابعة</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#globalStatsTab" type="button" role="tab" onclick="calculateGlobalOverview()"><i class="bi bi-graph-up-arrow"></i> إحصائيات شاملة</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#installmentsTab" type="button" role="tab"><i class="bi bi-credit-card-2-front-fill"></i> الأقساط</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#recurringTab" type="button" role="tab"><i class="bi bi-receipt"></i> المصروفات</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#cardsTab" type="button" role="tab"><i class="bi bi-credit-card-fill"></i> البطاقات</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#incomeTab" type="button" role="tab"><i class="bi bi-cash-stack"></i> الدخل</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#savingsTab" type="button" role="tab"><i class="bi bi-safe2"></i> الادخار والأصول</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#scheduledDebtsTab" type="button" role="tab"><i class="bi bi-calendar-x"></i> ديون مجدولة</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#memoTab" type="button" role="tab"><i class="bi bi-pencil-square"></i> مذكرات</button></li>
+        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-body-tertiary rounded-3 shadow-sm"
+            style="background:var(--card-bg);">
+            <div class="d-flex align-items-center gap-3"><img
+                    src="https://i.ibb.co/9mj4x6NH/Chat-GPT-Image-26-2026-06-28-40.png" alt="EgyUp Logo"
+                    class="app-logo">
+                <h2 class="mb-0 fw-bold"
+                    style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                    EgyUp</h2>
+            </div>
+            <div class="d-flex align-items-center gap-3"><span id="liveDateTime" class="badge py-2 px-3 small"
+                    style="background:var(--bg-secondary);color:var(--text-secondary);border-radius:20px;"></span><button
+                    class="btn btn-outline-secondary rounded-circle p-2" onclick="editCredentials()"
+                    title="تعديل بيانات الدخول" style="width:40px;height:40px;"><i
+                        class="bi bi-gear-fill"></i></button><button
+                    class="btn btn-outline-secondary rounded-circle p-2" id="darkModeBtn" onclick="toggleTheme()"
+                    style="width:40px;height:40px;"><i class="bi bi-moon-fill"></i></button></div>
+        </div>
+        <ul class="nav nav-pills mb-4 justify-content-center gap-1 shadow-sm p-2 bg-body rounded-3" id="mainTabs"
+            role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill"
+                    data-bs-target="#dashboardTab" type="button" role="tab" onclick="calculateFinanceReport()"><i
+                        class="bi bi-pie-chart-fill"></i> المتابعة</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#globalStatsTab" type="button" role="tab" onclick="calculateGlobalOverview()"><i
+                        class="bi bi-graph-up-arrow"></i> إحصائيات شاملة</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#installmentsTab" type="button" role="tab"><i
+                        class="bi bi-credit-card-2-front-fill"></i> الأقساط</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#recurringTab" type="button" role="tab"><i class="bi bi-receipt"></i>
+                    المصروفات</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#cardsTab" type="button" role="tab"><i class="bi bi-credit-card-fill"></i>
+                    البطاقات</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#incomeTab" type="button" role="tab"><i class="bi bi-cash-stack"></i> الدخل</button>
+            </li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#savingsTab" type="button" role="tab"><i class="bi bi-safe2"></i> الادخار
+                    والأصول</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#scheduledDebtsTab" type="button" role="tab"><i class="bi bi-calendar-x"></i> ديون
+                    مجدولة</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#memoTab" type="button" role="tab"><i class="bi bi-pencil-square"></i> مذكرات</button>
+            </li>
         </ul>
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="dashboardTab" role="tabpanel">
                 <div id="todayAlertBox"></div>
-                <div class="export-reminder"><i class="bi bi-cloud-upload-fill" style="font-size:1.5rem;color:#ff9800;"></i><span><strong>تذكير مهم:</strong> لا تنس تصدير نسخة احتياطية من بياناتك بعد كل تعديل!</span></div>
+                <div class="export-reminder"><i class="bi bi-cloud-upload-fill"
+                        style="font-size:1.5rem;color:#ff9800;"></i><span><strong>تذكير مهم:</strong> لا تنس تصدير نسخة
+                        احتياطية من بياناتك بعد كل تعديل!</span></div>
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <div class="btn-group"><button class="btn btn-sm btn-primary active" id="btnMonthly" onclick="changeDashboardView('monthly')"><i class="bi bi-calendar3"></i> عرض شهري</button><button class="btn btn-sm btn-outline-primary" id="btnYearly" onclick="changeDashboardView('yearly')"><i class="bi bi-calendar-range"></i> عرض سنوي</button></div>
-                    <div class="d-flex gap-1"><button class="btn btn-outline-dark btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> طباعة / PDF</button><button class="btn btn-outline-secondary btn-sm" onclick="exportDataJSON()"><i class="bi bi-download"></i> تصدير البيانات</button><button class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('fileImporter').click()"><i class="bi bi-upload"></i> استيراد</button><input type="file" id="fileImporter" accept=".json" style="display:none" onchange="importDataJSON(event)"></div>
+                    <div class="btn-group"><button class="btn btn-sm btn-primary active" id="btnMonthly"
+                            onclick="changeDashboardView('monthly')"><i class="bi bi-calendar3"></i> عرض شهري</button><button
+                            class="btn btn-sm btn-outline-primary" id="btnYearly"
+                            onclick="changeDashboardView('yearly')"><i class="bi bi-calendar-range"></i> عرض سنوي</button>
+                    </div>
+                    <div class="d-flex gap-1"><button class="btn btn-outline-dark btn-sm"
+                            onclick="window.print()"><i class="bi bi-printer"></i> طباعة / PDF</button><button
+                            class="btn btn-outline-secondary btn-sm" onclick="exportDataJSON()"><i
+                                class="bi bi-download"></i> تصدير البيانات</button><button
+                            class="btn btn-outline-secondary btn-sm"
+                            onclick="document.getElementById('fileImporter').click()"><i class="bi bi-upload"></i>
+                            استيراد</button><input type="file" id="fileImporter" accept=".json" style="display:none"
+                            onchange="importDataJSON(event)"></div>
                 </div>
-                <div class="row g-2 mb-4 align-items-end" id="monthSelector"><div class="col-5"><label class="small fw-bold form-label">الشهر</label><select id="filterMonth" class="form-select" onchange="calculateFinanceReport()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div><div class="col-5"><label class="small fw-bold form-label">السنة</label><input type="number" id="filterYear" class="form-control" value="2026" onchange="calculateFinanceReport()"></div><div class="col-2"><button class="btn btn-primary w-100" onclick="calculateFinanceReport()">تحديث</button></div></div>
+                <div class="row g-2 mb-4 align-items-end" id="monthSelector">
+                    <div class="col-5"><label class="small fw-bold form-label">الشهر</label><select id="filterMonth"
+                            class="form-select" onchange="calculateFinanceReport()">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select></div>
+                    <div class="col-5"><label class="small fw-bold form-label">السنة</label><input type="number"
+                            id="filterYear" class="form-control" value="2026" onchange="calculateFinanceReport()"></div>
+                    <div class="col-2"><button class="btn btn-primary w-100"
+                            onclick="calculateFinanceReport()">تحديث</button></div>
+                </div>
                 <div class="row g-3 mb-4" id="statsContainer"></div>
                 <div class="row g-3 mb-4" id="extraStatsContainer"></div>
-                <div class="row g-3 mb-4"><div class="col-md-6"><div class="p-3 border rounded bg-light-subtle" style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;"><canvas id="barChart" style="max-height: 240px;"></canvas></div></div><div class="col-md-6"><div class="p-3 border rounded bg-light-subtle" style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;"><canvas id="doughnutChart" style="max-height: 240px;"></canvas></div></div></div>
-                <div class="row g-3 mb-4"><div class="col-12"><div class="p-3 border rounded bg-light-subtle" style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;"><h6 class="mb-3">📈 تطور صافي الثروة شهرياً</h6><canvas id="netWorthChart" style="max-height: 280px;"></canvas></div></div></div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light-subtle"
+                            style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;">
+                            <canvas id="barChart" style="max-height: 240px;"></canvas></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light-subtle"
+                            style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;">
+                            <canvas id="doughnutChart" style="max-height: 240px;"></canvas></div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="p-3 border rounded bg-light-subtle"
+                            style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;">
+                            <h6 class="mb-3">📈 تطور صافي الثروة شهرياً</h6><canvas id="netWorthChart"
+                                style="max-height: 280px;"></canvas></div>
+                    </div>
+                </div>
                 <h5 class="fw-bold mb-3"><i class="bi bi-card-checklist"></i> التزامات الفترة المحددة</h5>
-                <div class="table-responsive"><table class="table table-striped table-hover align-middle" id="dueTable"><thead class="table-dark"><tr><th>النوع</th><th>البيان / الوصف</th><th>تاريخ الاستحقاق الدقيق</th><th>المبلغ المطلوب</th><th>الحالة</th></tr></thead><tbody></tbody></table></div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle" id="dueTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>النوع</th>
+                                <th>البيان / الوصف</th>
+                                <th>تاريخ الاستحقاق الدقيق</th>
+                                <th>المبلغ المطلوب</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
             <div class="tab-pane fade" id="globalStatsTab" role="tabpanel">
-                <h4 class="fw-bold mb-4 pb-2" style="border-bottom:2px solid var(--border-light);"><i class="bi bi-shield-shaded"></i> تقرير كشف الحساب المركزي والوضع المالي العام</h4>
+                <h4 class="fw-bold mb-4 pb-2" style="border-bottom:2px solid var(--border-light);"><i
+                        class="bi bi-shield-shaded"></i> تقرير كشف الحساب المركزي والوضع المالي العام</h4>
                 <div class="row g-3 mb-4" id="globalOverviewCards"></div>
-                <div class="card p-3 mb-4 shadow-sm border-0" style="border-radius:var(--radius-lg);background:var(--bg-secondary);"><h5 class="fw-bold mb-2"><i class="bi bi-bullseye"></i> مؤشر سداد المديونيات والأقساط الكلية</h5><div class="progress mb-2" id="globalDebtProgressBar" style="height: 28px; font-size: 0.95rem; font-weight: bold; border-radius:20px;"></div><p class="text-muted small mb-0" id="globalDebtProgressText"></p></div>
+                <div class="card p-3 mb-4 shadow-sm border-0"
+                    style="border-radius:var(--radius-lg);background:var(--bg-secondary);">
+                    <h5 class="fw-bold mb-2"><i class="bi bi-bullseye"></i> مؤشر سداد المديونيات والأقساط الكلية</h5>
+                    <div class="progress mb-2" id="globalDebtProgressBar"
+                        style="height: 28px; font-size: 0.95rem; font-weight: bold; border-radius:20px;"></div>
+                    <p class="text-muted small mb-0" id="globalDebtProgressText"></p>
+                </div>
             </div>
             <div class="tab-pane fade" id="installmentsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-credit-card-2-front"></i> محفظة الأقساط الائتمانية</h4><button class="btn btn-success btn-sm" onclick="showFormModal('installment')"><i class="bi bi-plus-circle"></i> إضافة قسط جديد</button></div>
-                <input type="text" id="searchInstallments" class="form-control mb-3" placeholder="🔍 بحث في الأقساط..." oninput="filterTable('installments')">
-                <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>الجهة</th><th>المبلغ الكلي</th><th>القسط الشهري</th><th>الشهور المسددة</th><th>المتبقي للجهة</th><th>نسبة السداد</th><th>تاريخ القسط القادم</th><th>التحكم</th></tr></thead><tbody id="installmentsTableBody"></tbody></table></div>
-                <div class="alert alert-info mt-3" id="installmentsSummaryCard" style="border-radius:var(--radius-lg);"></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-credit-card-2-front"></i> محفظة الأقساط الائتمانية</h4><button
+                        class="btn btn-success btn-sm" onclick="showFormModal('installment')"><i
+                            class="bi bi-plus-circle"></i> إضافة قسط جديد</button>
+                </div>
+                <input type="text" id="searchInstallments" class="form-control mb-3" placeholder="🔍 بحث في الأقساط..."
+                    oninput="filterTable('installments')">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الجهة</th>
+                                <th>المبلغ الكلي</th>
+                                <th>القسط الشهري</th>
+                                <th>الشهور المسددة</th>
+                                <th>المتبقي للجهة</th>
+                                <th>نسبة السداد</th>
+                                <th>تاريخ القسط القادم</th>
+                                <th>التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="installmentsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3" id="installmentsSummaryCard" style="border-radius:var(--radius-lg);">
+                </div>
             </div>
             <div class="tab-pane fade" id="recurringTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-receipt-cutoff"></i> المصروفات الدورية والالتزامات الثابتة</h4><button class="btn btn-success btn-sm" onclick="showFormModal('recurring')"><i class="bi bi-plus-circle"></i> إضافة مصروف دوري</button></div>
-                <input type="text" id="searchRecurring" class="form-control mb-3" placeholder="🔍 بحث في المصروفات..." oninput="filterTable('recurring')">
-                <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>بند الفئة</th><th>المبلغ الثابت</th><th>يوم الاستحقاق الشهري</th><th>التاريخ القادم المتوقع</th><th>التحكم</th></tr></thead><tbody id="recurringTableBody"></tbody></table></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-receipt-cutoff"></i> المصروفات الدورية والالتزامات الثابتة</h4><button
+                        class="btn btn-success btn-sm" onclick="showFormModal('recurring')"><i
+                            class="bi bi-plus-circle"></i> إضافة مصروف دوري</button>
+                </div>
+                <input type="text" id="searchRecurring" class="form-control mb-3" placeholder="🔍 بحث في المصروفات..."
+                    oninput="filterTable('recurring')">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>بند الفئة</th>
+                                <th>المبلغ الثابت</th>
+                                <th>يوم الاستحقاق الشهري</th>
+                                <th>التاريخ القادم المتوقع</th>
+                                <th>التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recurringTableBody"></tbody>
+                    </table>
+                </div>
             </div>
             <div class="tab-pane fade" id="cardsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-credit-card"></i> مديونيات البطاقات والفيزا</h4><button class="btn btn-success btn-sm" onclick="showFormModal('card')"><i class="bi bi-plus-circle"></i> إضافة مديونية كارت</button></div>
-                <div class="alert alert-warning py-2 small" style="border-radius:var(--radius-md);"><i class="bi bi-info-circle-fill"></i> تنويه ذكي: تاريخ الاستحقاق الافتراضي مبرمج تلقائياً ليكون يوم 25 من الشهر التالي لشهر الشراء الفعلي.</div>
-                <input type="text" id="searchCards" class="form-control mb-3" placeholder="🔍 بحث في البطاقات..." oninput="filterTable('cards')">
-                <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>اسم البنك</th><th>نوع الكارت</th><th>تاريخ حركة الشراء</th><th>المبلغ</th><th>تاريخ السداد (يوم 25)</th><th>أيام الأمان المتبقية</th><th>التحكم</th></tr></thead><tbody id="cardsTableBody"></tbody></table></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-credit-card"></i> مديونيات البطاقات والفيزا</h4><button
+                        class="btn btn-success btn-sm" onclick="showFormModal('card')"><i
+                            class="bi bi-plus-circle"></i> إضافة مديونية كارت</button>
+                </div>
+                <div class="alert alert-warning py-2 small" style="border-radius:var(--radius-md);"><i
+                        class="bi bi-info-circle-fill"></i> تنويه ذكي: تاريخ الاستحقاق الافتراضي مبرمج تلقائياً ليكون يوم 25
+                    من الشهر التالي لشهر الشراء الفعلي.</div>
+                <input type="text" id="searchCards" class="form-control mb-3" placeholder="🔍 بحث في البطاقات..."
+                    oninput="filterTable('cards')">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>اسم البنك</th>
+                                <th>نوع الكارت</th>
+                                <th>تاريخ حركة الشراء</th>
+                                <th>المبلغ</th>
+                                <th>تاريخ السداد (يوم 25)</th>
+                                <th>أيام الأمان المتبقية</th>
+                                <th>التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cardsTableBody"></tbody>
+                    </table>
+                </div>
             </div>
             <div class="tab-pane fade" id="incomeTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-cash"></i> مصادر الإيرادات والدخل الشهري</h4><button class="btn btn-success btn-sm" onclick="showFormModal('income')"><i class="bi bi-plus-circle"></i> إضافة مورد دخل</button></div>
-                <input type="text" id="searchIncome" class="form-control mb-3" placeholder="🔍 بحث في الدخل..." oninput="filterTable('income')">
-                <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>مصدر الدخل</th><th>المبلغ المقدر</th><th>يوم الإيداع المتوقع</th><th>التحكم</th></tr></thead><tbody id="incomeTableBody"></tbody></table></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-cash"></i> مصادر الإيرادات والدخل الشهري</h4><button
+                        class="btn btn-success btn-sm" onclick="showFormModal('income')"><i
+                            class="bi bi-plus-circle"></i> إضافة مورد دخل</button>
+                </div>
+                <input type="text" id="searchIncome" class="form-control mb-3" placeholder="🔍 بحث في الدخل..."
+                    oninput="filterTable('income')">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>مصدر الدخل</th>
+                                <th>المبلغ المقدر</th>
+                                <th>يوم الإيداع المتوقع</th>
+                                <th>التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incomeTableBody"></tbody>
+                    </table>
+                </div>
             </div>
             <div class="tab-pane fade" id="savingsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-safe2"></i> حصالات الادخار والملاذات الآمنة (كاش / ذهب / فضة)</h4><button class="btn btn-success btn-sm" onclick="showFormModal('savings')"><i class="bi bi-plus-circle"></i> إضافة أصل أو صندوق جديد</button></div>
-                <input type="text" id="searchSavings" class="form-control mb-3" placeholder="🔍 بحث في الادخار..." oninput="filterTable('savings')">
-                <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>نوع الأصل</th><th>اسم الصندوق / البيان</th><th>الكمية / المستهدف</th><th>القيمة المتوفرة</th><th>ثمن الشراء / مكسب/خسارة</th><th>تاريخ الحيازة</th><th>الإنجاز</th><th>التحكم</th></tr></thead><tbody id="savingsTableBody"></tbody></table></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-safe2"></i> حصالات الادخار والملاذات الآمنة (كاش / ذهب / فضة)</h4><button
+                        class="btn btn-success btn-sm" onclick="showFormModal('savings')"><i
+                            class="bi bi-plus-circle"></i> إضافة أصل أو صندوق جديد</button>
+                </div>
+                <input type="text" id="searchSavings" class="form-control mb-3" placeholder="🔍 بحث في الادخار..."
+                    oninput="filterTable('savings')">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>نوع الأصل</th>
+                                <th>اسم الصندوق / البيان</th>
+                                <th>الكمية / المستهدف</th>
+                                <th>القيمة المتوفرة</th>
+                                <th>ثمن الشراء / مكسب/خسارة</th>
+                                <th>تاريخ الحيازة</th>
+                                <th>الإنجاز</th>
+                                <th>التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savingsTableBody"></tbody>
+                    </table>
+                </div>
             </div>
             <div class="tab-pane fade" id="scheduledDebtsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-calendar-x"></i> الديون المجدولة والالتزامات غير الدورية</h4><button class="btn btn-success btn-sm" onclick="showFormModal('scheduledDebt')"><i class="bi bi-plus-circle"></i> إضافة دين مجدول</button></div>
-                <input type="text" id="searchScheduledDebts" class="form-control mb-3" placeholder="🔍 بحث في الديون المجدولة..." oninput="filterTable('scheduledDebts')">
-                <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>وصف الدين</th><th>المبلغ</th><th>تاريخ الاستحقاق</th><th>ملاحظات</th><th>التحكم</th></tr></thead><tbody id="scheduledDebtsTableBody"></tbody></table></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-calendar-x"></i> الديون المجدولة والالتزامات غير الدورية</h4><button
+                        class="btn btn-success btn-sm" onclick="showFormModal('scheduledDebt')"><i
+                            class="bi bi-plus-circle"></i> إضافة دين مجدول</button>
+                </div>
+                <input type="text" id="searchScheduledDebts" class="form-control mb-3"
+                    placeholder="🔍 بحث في الديون المجدولة..." oninput="filterTable('scheduledDebts')">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>وصف الدين</th>
+                                <th>المبلغ</th>
+                                <th>تاريخ الاستحقاق</th>
+                                <th>ملاحظات</th>
+                                <th>التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduledDebtsTableBody"></tbody>
+                    </table>
+                </div>
             </div>
             <div class="tab-pane fade" id="memoTab" role="tabpanel">
                 <h4 class="mb-3"><i class="bi bi-journal-text"></i> المذكرة والمسودة المالية الذكية</h4>
-                <textarea id="memoTextarea" class="form-control" rows="8" placeholder="اكتب هنا أي ملاحظات، تذكيرات، أو أرقام سريعة..."></textarea>
-                <div class="d-flex justify-content-between align-items-center mt-3"><span id="memoAlertText" class="text-success fw-bold"></span><button class="btn btn-primary px-4" onclick="saveMemoData()"><i class="bi bi-floppy-fill"></i> حفظ المذكرة الآن</button></div>
+                <textarea id="memoTextarea" class="form-control" rows="8"
+                    placeholder="اكتب هنا أي ملاحظات، تذكيرات، أو أرقام سريعة..."></textarea>
+                <div class="d-flex justify-content-between align-items-center mt-3"><span id="memoAlertText"
+                        class="text-success fw-bold"></span><button class="btn btn-primary px-4"
+                        onclick="saveMemoData()"><i class="bi bi-floppy-fill"></i> حفظ المذكرة الآن</button></div>
             </div>
         </div>
-        <div class="tips-box shadow-sm" style="background:var(--accent-soft);border-left:4px solid var(--accent);padding:18px 20px;border-radius:var(--radius-lg);margin-top:24px;text-align:center;"><h6 class="fw-bold mb-1"><i class="bi bi-lightbulb-fill"></i> نصيحة EgyUp المالية الذكية:</h6><p id="financialTipText" class="mb-0 fs-6 fw-semibold" style="color:var(--text-secondary);">جاري اختيار نصيحة مالية من أجلك...</p></div>
-        <div class="footer-text" style="text-align:center;font-size:0.85rem;opacity:0.6;margin-top:20px;border-top:1px solid var(--border-light);padding-top:18px;">Made with ♥️ by <strong>Mohammed Hussein 2026</strong></div>
+        <div class="tips-box shadow-sm"
+            style="background:var(--accent-soft);border-left:4px solid var(--accent);padding:18px 20px;border-radius:var(--radius-lg);margin-top:24px;text-align:center;">
+            <h6 class="fw-bold mb-1"><i class="bi bi-lightbulb-fill"></i> نصيحة EgyUp المالية الذكية:</h6>
+            <p id="financialTipText" class="mb-0 fs-6 fw-semibold" style="color:var(--text-secondary);">جاري اختيار نصيحة
+                مالية من أجلك...</p>
+        </div>
+        <div class="footer-text"
+            style="text-align:center;font-size:0.85rem;opacity:0.6;margin-top:20px;border-top:1px solid var(--border-light);padding-top:18px;">
+            Made with ♥️ by <strong>Mohammed Hussein 2026</strong></div>
     </div>
 
     <div class="modal fade" id="prayerModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-center p-4">
-                <div class="modal-header border-0 pb-0"><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body"><i class="bi bi-star-fill" style="font-size:3rem;color:#d4af37;"></i><p class="prayer-text mt-3">اللهم صلِّ وسلم وبارك على نبينا محمد ﷺ</p><p class="text-muted">ذكر الله يطمئن القلوب ويبارك في الأرزاق</p></div>
-                <div class="modal-footer border-0 justify-content-center"><button class="btn btn-warning px-4 fw-bold" data-bs-dismiss="modal">اللهم آمين</button></div>
+                <div class="modal-header border-0 pb-0"><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><i class="bi bi-star-fill" style="font-size:3rem;color:#d4af37;"></i>
+                    <p class="prayer-text mt-3">اللهم صلِّ وسلم وبارك على نبينا محمد ﷺ</p>
+                    <p class="text-muted">ذكر الله يطمئن القلوب ويبارك في الأرزاق</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center"><button class="btn btn-warning px-4 fw-bold"
+                        data-bs-dismiss="modal">اللهم آمين</button></div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="alertsModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5><i class="bi bi-bell-fill"></i> تنبيهات هامة</h5></div><div class="modal-body" id="alertsModalBody"></div></div></div></div>
-    <div class="modal fade" id="formModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 id="formModalTitle">إضافة</h5></div><div class="modal-body" id="formModalBody"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-success" id="formModalSubmitBtn">حفظ</button></div></div></div></div>
+    <div class="modal fade" id="alertsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5><i class="bi bi-bell-fill"></i> تنبيهات هامة</h5>
+                </div>
+                <div class="modal-body" id="alertsModalBody"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="formModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="formModalTitle">إضافة</h5>
+                </div>
+                <div class="modal-body" id="formModalBody"></div>
+                <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button
+                        class="btn btn-success" id="formModalSubmitBtn">حفظ</button></div>
+            </div>
+        </div>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+    </script>
     <script>
-        // ======================== DATABASE MANAGER (IndexedDB - only for appData and memo) ========================
-        const dbManager = (() => {
-            const DB_NAME = 'EgyUpDB';
-            const DB_VERSION = 3; // increased version
-            const STORE_NAME = 'appState';
-            let db = null;
-
-            async function openDB() {
-                if (db) return db;
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(DB_NAME, DB_VERSION);
-                    request.onupgradeneeded = (event) => {
-                        const database = event.target.result;
-                        if (!database.objectStoreNames.contains(STORE_NAME)) {
-                            database.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                        }
-                    };
-                    request.onsuccess = (event) => {
-                        db = event.target.result;
-                        resolve(db);
-                    };
-                    request.onerror = (event) => reject(event.target.error);
-                });
-            }
-
-            async function getStore(mode = 'readonly') {
-                const database = await openDB();
-                const transaction = database.transaction([STORE_NAME], mode);
-                return transaction.objectStore(STORE_NAME);
-            }
-
-            async function saveData(data) {
-                const store = await getStore('readwrite');
-                return new Promise((resolve, reject) => {
-                    const request = store.put({ id: 'appData', value: data });
-                    request.onsuccess = () => resolve();
-                    request.onerror = () => reject(request.error);
-                });
-            }
-
-            async function loadData() {
-                const store = await getStore('readonly');
-                return new Promise((resolve, reject) => {
-                    const request = store.get('appData');
-                    request.onsuccess = () => resolve(request.result ? request.result.value : null);
-                    request.onerror = () => reject(request.error);
-                });
-            }
-
-            async function saveMemo(memoText) {
-                const store = await getStore('readwrite');
-                return new Promise((resolve, reject) => {
-                    const request = store.put({ id: 'memo', value: memoText });
-                    request.onsuccess = () => resolve();
-                    request.onerror = () => reject(request.error);
-                });
-            }
-
-            async function loadMemo() {
-                const store = await getStore('readonly');
-                return new Promise((resolve, reject) => {
-                    const request = store.get('memo');
-                    request.onsuccess = () => resolve(request.result ? request.result.value : '');
-                    request.onerror = () => reject(request.error);
-                });
-            }
-
-            async function clearAll() {
-                const store = await getStore('readwrite');
-                return new Promise((resolve, reject) => {
-                    const request = store.clear();
-                    request.onsuccess = () => resolve();
-                    request.onerror = () => reject(request.error);
-                });
-            }
-
-            return { saveData, loadData, saveMemo, loadMemo, clearAll, openDB };
-        })();
-
         // ======================== DATA & STATE ========================
         let appData = {
             installments: [],
@@ -327,7 +686,8 @@
             cards: [],
             income: [],
             savings: [],
-            scheduledDebts: []
+            scheduledDebts: [],
+            memo: ''
         };
         let activeView = 'monthly';
         let currentEditType = '';
@@ -363,79 +723,125 @@
 
         function showRandomTip() {
             const tip = document.getElementById('financialTipText');
-            if (tip) tip.textContent = financialTipsLibrary[Math.floor(Math.random() * financialTipsLibrary.length)];
+            if (tip) tip.textContent = financialTipsLibrary[Math.floor(Math.random() *
+            financialTipsLibrary.length)];
         }
-        function convertToLocalDate(d) { return d ? new Date(d).toLocaleDateString('ar-EG') : ''; }
-        function calculateCreditCardDueDate(pd) { let d = new Date(pd); let m = d.getMonth() + 1; let y = d.getFullYear(); if (m > 11) { m = 0; y++; } return new Date(y, m, 25); }
-        function calculateDaysLeft(td) { let t = new Date(); t.setHours(0, 0, 0, 0); td.setHours(0, 0, 0, 0); return Math.ceil((td - t) / 86400000); }
-        function getNextDateForSpecificDay(day) { let t = new Date(); let y = t.getFullYear(); let m = t.getMonth(); let max = new Date(y, m + 1, 0).getDate(); let targetDay = Math.min(day, max); let target = new Date(y, m, targetDay); if (t.getDate() > targetDay) { let nmax = new Date(y, m + 2, 0).getDate(); target = new Date(y, m + 1, Math.min(day, nmax)); } return target; }
-        function addMonthsToDateStr(ds, mo) { let d = new Date(ds); d.setMonth(d.getMonth() + mo); return d.toISOString().split('T')[0]; }
 
-        function startClock() { setInterval(() => { let el = document.getElementById('liveDateTime'); if (el) { let n = new Date(); el.textContent = n.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' | ' + n.toLocaleTimeString('ar-EG'); } }, 1000); }
+        function convertToLocalDate(d) {
+            return d ? new Date(d).toLocaleDateString('ar-EG') : '';
+        }
+
+        function calculateCreditCardDueDate(pd) {
+            let d = new Date(pd);
+            let m = d.getMonth() + 1;
+            let y = d.getFullYear();
+            if (m > 11) { m = 0;
+                y++; }
+            return new Date(y, m, 25);
+        }
+
+        function calculateDaysLeft(td) {
+            let t = new Date();
+            t.setHours(0, 0, 0, 0);
+            td.setHours(0, 0, 0, 0);
+            return Math.ceil((td - t) / 86400000);
+        }
+
+        function getNextDateForSpecificDay(day) {
+            let t = new Date();
+            let y = t.getFullYear();
+            let m = t.getMonth();
+            let max = new Date(y, m + 1, 0).getDate();
+            let targetDay = Math.min(day, max);
+            let target = new Date(y, m, targetDay);
+            if (t.getDate() > targetDay) { let nmax = new Date(y, m + 2, 0).getDate();
+                target = new Date(y, m + 1, Math.min(day, nmax)); }
+            return target;
+        }
+
+        function addMonthsToDateStr(ds, mo) {
+            let d = new Date(ds);
+            d.setMonth(d.getMonth() + mo);
+            return d.toISOString().split('T')[0];
+        }
+
+        function startClock() {
+            setInterval(() => {
+                let el = document.getElementById('liveDateTime');
+                if (el) {
+                    let n = new Date();
+                    el.textContent = n.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric',
+                        month: 'long', day: 'numeric' }) + ' | ' + n.toLocaleTimeString('ar-EG');
+                }
+            }, 1000);
+        }
 
         function toggleTheme() {
-            let cur = document.documentElement.getAttribute('data-bs-theme'); let target = cur === 'dark' ? 'light' : 'dark';
+            let cur = document.documentElement.getAttribute('data-bs-theme');
+            let target = cur === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-bs-theme', target);
-            document.getElementById('darkModeBtn').innerHTML = target === 'dark' ? '<i class="bi bi-sun-fill text-warning"></i>' : '<i class="bi bi-moon-fill"></i>';
+            document.getElementById('darkModeBtn').innerHTML = target === 'dark' ?
+                '<i class="bi bi-sun-fill text-warning"></i>' : '<i class="bi bi-moon-fill"></i>';
             localStorage.setItem('egyup_theme_choice', target);
-            destroyAllCharts(); calculateFinanceReport(); calculateGlobalOverview();
+            destroyAllCharts();
+            calculateFinanceReport();
+            calculateGlobalOverview();
         }
 
         function destroyAllCharts() {
-            if (chartInstanceBar) { chartInstanceBar.destroy(); chartInstanceBar = null; }
-            if (chartInstanceDoughnut) { chartInstanceDoughnut.destroy(); chartInstanceDoughnut = null; }
-            if (chartInstanceNetWorth) { chartInstanceNetWorth.destroy(); chartInstanceNetWorth = null; }
+            if (chartInstanceBar) { chartInstanceBar.destroy();
+                chartInstanceBar = null; }
+            if (chartInstanceDoughnut) { chartInstanceDoughnut.destroy();
+                chartInstanceDoughnut = null; }
+            if (chartInstanceNetWorth) { chartInstanceNetWorth.destroy();
+                chartInstanceNetWorth = null; }
         }
 
-        // ======================== STORAGE FUNCTIONS ========================
-        async function saveAppDataToStorage() {
-            try {
-                await dbManager.saveData(appData);
-                localStorage.setItem('egyup_raw_data_v2', JSON.stringify(appData));
-            } catch (e) {
-                console.error('saveAppDataToStorage error', e);
-                localStorage.setItem('egyup_raw_data_v2', JSON.stringify(appData));
-            }
+        function saveAppDataToStorage() {
+            localStorage.setItem('egyup_raw_data_v2', JSON.stringify(appData));
         }
 
-        async function loadAppDataFromStorage() {
-            try {
-                const data = await dbManager.loadData();
-                if (data) {
-                    appData = data;
-                    ensureDataStructure();
-                    return;
-                }
-            } catch (e) { console.error('loadAppDataFromStorage IndexedDB error', e); }
-            const raw = localStorage.getItem('egyup_raw_data_v2');
+        function loadAppDataFromStorage() {
+            let raw = localStorage.getItem('egyup_raw_data_v2');
             if (raw) {
-                try {
-                    appData = JSON.parse(raw);
-                    ensureDataStructure();
-                    await dbManager.saveData(appData).catch(() => {});
-                } catch (e) {}
+                try { appData = JSON.parse(raw); } catch (e) {}
             }
-            ensureDataStructure();
-        }
-
-        function ensureDataStructure() {
             if (!appData.installments) appData.installments = [];
             if (!appData.recurring) appData.recurring = [];
             if (!appData.cards) appData.cards = [];
             if (!appData.income) appData.income = [];
             if (!appData.savings) appData.savings = [];
             if (!appData.scheduledDebts) appData.scheduledDebts = [];
+            if (typeof appData.memo !== 'string') appData.memo = '';
+            // توافق مع الإصدارات القديمة: إذا كانت المذكرة موجودة في المخزن المنفصل فقط، ننقلها
+            if (!appData.memo) {
+                let legacyMemo = localStorage.getItem('egyup_memo_text');
+                if (legacyMemo) {
+                    appData.memo = legacyMemo;
+                    localStorage.removeItem('egyup_memo_text');
+                    saveAppDataToStorage();
+                }
+            }
         }
 
         function validateImportData(data) {
-            return data && typeof data === 'object' && Array.isArray(data.installments) && Array.isArray(data.recurring) && Array.isArray(data.cards) && Array.isArray(data.income) && Array.isArray(data.savings) && Array.isArray(data.scheduledDebts);
+            return data && typeof data === 'object' &&
+                Array.isArray(data.installments) && Array.isArray(data.recurring) &&
+                Array.isArray(data.cards) && Array.isArray(data.income) && Array.isArray(data.savings) &&
+                Array.isArray(data.scheduledDebts);
         }
 
-        // ======================== AUTH & SECURITY ========================
         function initSecurityGate() {
-            let u = localStorage.getItem('egyup_username'); let p = localStorage.getItem('egyup_password');
-            if (!p) { let old = localStorage.getItem('egyup_app_secure_key'); if (old) { p = old; localStorage.setItem('egyup_password', p); localStorage.removeItem('egyup_app_secure_key'); } }
-            if (!u) { u = 'admin'; localStorage.setItem('egyup_username', u); }
+            let u = localStorage.getItem('egyup_username');
+            let p = localStorage.getItem('egyup_password');
+            if (!p) {
+                let old = localStorage.getItem('egyup_app_secure_key');
+                if (old) { p = old;
+                    localStorage.setItem('egyup_password', p);
+                    localStorage.removeItem('egyup_app_secure_key'); }
+            }
+            if (!u) { u = 'admin';
+                localStorage.setItem('egyup_username', u); }
             const isFirst = !p;
             document.getElementById('lockTitle').textContent = isFirst ? 'إنشاء حساب جديد' : 'EgyUp المالي';
             document.getElementById('lockSubmit').textContent = isFirst ? 'إنشاء الحساب' : 'تسجيل الدخول';
@@ -444,53 +850,136 @@
                 let user = document.getElementById('lockUsername').value.trim();
                 let pass = document.getElementById('lockPassword').value.trim();
                 if (!user || !pass) return;
-                if (isFirst) { localStorage.setItem('egyup_username', user); localStorage.setItem('egyup_password', pass); unlockDashboard(); }
-                else { if (user === u && pass === p) unlockDashboard(); else { document.getElementById('lockError').classList.remove('hidden'); setTimeout(() => document.getElementById('lockError').classList.add('hidden'), 2500); } }
+                if (isFirst) {
+                    localStorage.setItem('egyup_username', user);
+                    localStorage.setItem('egyup_password', pass);
+                    unlockDashboard();
+                } else {
+                    if (user === u && pass === p) unlockDashboard();
+                    else {
+                        document.getElementById('lockError').classList.remove('hidden');
+                        setTimeout(() => document.getElementById('lockError').classList.add(
+                        'hidden'), 2500);
+                    }
+                }
             };
         }
 
         function editCredentials() {
-            let cp = prompt("كلمة المرور الحالية:"); if (!cp) return;
-            if (cp !== localStorage.getItem('egyup_password')) { alert("❌ غير صحيحة!"); return; }
-            let nu = prompt("اسم المستخدم الجديد:", localStorage.getItem('egyup_username')); if (!nu) return;
-            let np = prompt("كلمة المرور الجديدة:"); if (!np) return;
-            let con = prompt("تأكيد كلمة المرور:"); if (con !== np) { alert("❌ غير متطابقة!"); return; }
-            localStorage.setItem('egyup_username', nu.trim()); localStorage.setItem('egyup_password', np.trim());
-            alert("✅ تم التحديث. سيتم إعادة التحميل."); location.reload();
+            let cp = prompt("كلمة المرور الحالية:");
+            if (!cp) return;
+            if (cp !== localStorage.getItem('egyup_password')) { alert("❌ غير صحيحة!");
+                return; }
+            let nu = prompt("اسم المستخدم الجديد:", localStorage.getItem('egyup_username'));
+            if (!nu) return;
+            let np = prompt("كلمة المرور الجديدة:");
+            if (!np) return;
+            let con = prompt("تأكيد كلمة المرور:");
+            if (con !== np) { alert("❌ غير متطابقة!");
+                return; }
+            localStorage.setItem('egyup_username', nu.trim());
+            localStorage.setItem('egyup_password', np.trim());
+            alert("✅ تم التحديث. سيتم إعادة التحميل.");
+            location.reload();
         }
 
-        async function clearAllData() {
-            if (confirm('هل أنت متأكد من تصفير جميع البيانات والملاحظات والصور؟ لا يمكن التراجع.')) {
-                try { await dbManager.clearAll(); } catch (e) {}
-                localStorage.clear();
-                location.reload();
+        function showAutoAlerts() {
+            let now = new Date();
+            let todayDay = now.getDate();
+            let html = '';
+            let has = false;
+            appData.installments.forEach(item => {
+                let total = parseInt(item.totalCount) || 0;
+                let paid = parseInt(item.paidCount) || 0;
+                let monthly = parseFloat(item.monthlyAmount) || 0;
+                for (let i = paid; i < total; i++) {
+                    let due = new Date(addMonthsToDateStr(item.startDate, i));
+                    let days = calculateDaysLeft(due);
+                    if (days >= 0 && days <= 3) {
+                        has = true;
+                        html +=
+                            `<div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle-fill"></i> قسط <b>${item.entity}</b> بقيمة <b>${monthly.toLocaleString()} ج</b> ${days===0?'اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
+                    }
+                }
+            });
+            appData.cards.forEach(item => {
+                let due = calculateCreditCardDueDate(item.purchaseDate);
+                let days = calculateDaysLeft(due);
+                if (days >= 0 && days <= 5) {
+                    has = true;
+                    html +=
+                        `<div class="alert alert-danger py-2"><i class="bi bi-credit-card-fill"></i> كارت <b>${item.bank} - ${item.cardName}</b> بقيمة <b>${parseFloat(item.requiredAmount).toLocaleString()} ج</b> ${days===0?'اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
+                }
+            });
+            appData.recurring.forEach(item => {
+                if (parseInt(item.day) === todayDay) {
+                    has = true;
+                    html +=
+                        `<div class="alert alert-info py-2"><i class="bi bi-receipt"></i> اليوم موعد سداد <b>${item.category}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ج</b></div>`;
+                }
+            });
+            appData.scheduledDebts.forEach(item => {
+                let due = new Date(item.dueDate);
+                let days = calculateDaysLeft(due);
+                if (days >= 0 && days <= 3) {
+                    has = true;
+                    html +=
+                        `<div class="alert alert-dark py-2"><i class="bi bi-calendar-x"></i> دين مجدول <b>${item.description}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ج</b> ${days===0?'اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
+                }
+            });
+            if (has) {
+                document.getElementById('alertsModalBody').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('alertsModal')).show();
             }
         }
 
-        // ======================== ALERTS & REMINDERS ========================
-        function showAutoAlerts() { /* unchanged, omitted for brevity but present in full code */ }
+        function startBackupReminder() {
+            if (backupReminderInterval) clearInterval(backupReminderInterval);
+            backupReminderInterval = setInterval(() => {
+                if (lastExportTime && Math.floor((Date.now() - lastExportTime) / 60000) >= 30) {
+                    if (confirm("⏰ مرت 30 دقيقة منذ آخر نسخة. هل تريد تصدير بياناتك الآن؟")) exportDataJSON();
+                }
+            }, 60000);
+        }
 
-        function startBackupReminder() { /* unchanged */ }
-
-        // ======================== UNLOCK & INITIALIZATION ========================
-        async function unlockDashboard() {
+        function unlockDashboard() {
             document.getElementById('lockScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
-            let now = new Date(); document.getElementById('filterMonth').value = now.getMonth() + 1; document.getElementById('filterYear').value = now.getFullYear();
-            await loadAppDataFromStorage();
-            try {
-                const memoText = await dbManager.loadMemo();
-                document.getElementById('memoTextarea').value = memoText || '';
-            } catch (e) {
-                document.getElementById('memoTextarea').value = localStorage.getItem('egyup_memo_text') || '';
-            }
-            renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview(); showRandomTip(); showAutoAlerts(); startBackupReminder(); updateNetWorthHistory();
-            window.addEventListener('beforeunload', function(e) { e.preventDefault(); e.returnValue = 'تذكير: قم بتصدير بياناتك قبل المغادرة.'; return e.returnValue; });
+            let now = new Date();
+            document.getElementById('filterMonth').value = now.getMonth() + 1;
+            document.getElementById('filterYear').value = now.getFullYear();
+            loadAppDataFromStorage();
+            renderAllModulesTables();
+            calculateFinanceReport();
+            calculateGlobalOverview();
+            loadMemoData();
+            showRandomTip();
+            showAutoAlerts();
+            startBackupReminder();
+            updateNetWorthHistory();
+            window.addEventListener('beforeunload', function(e) {
+                e.preventDefault();
+                e.returnValue = 'تذكير: قم بتصدير بياناتك قبل المغادرة.';
+                return e.returnValue;
+            });
             setTimeout(() => { new bootstrap.Modal(document.getElementById('prayerModal')).show(); }, 600);
         }
 
-        // ======================== TABLE FILTERS ========================
-        function filterTable(type) { /* unchanged */ }
+        function filterTable(type) {
+            let sid = '',
+                tid = '';
+            if (type === 'installments') { sid = 'searchInstallments';
+                tid = 'installmentsTableBody'; } else if (type === 'recurring') { sid = 'searchRecurring';
+                tid = 'recurringTableBody'; } else if (type === 'cards') { sid = 'searchCards';
+                tid = 'cardsTableBody'; } else if (type === 'income') { sid = 'searchIncome';
+                tid = 'incomeTableBody'; } else if (type === 'savings') { sid = 'searchSavings';
+                tid = 'savingsTableBody'; } else if (type === 'scheduledDebts') { sid = 'searchScheduledDebts';
+                tid = 'scheduledDebtsTableBody'; }
+            if (!sid || !tid) return;
+            let q = document.getElementById(sid).value.toLowerCase();
+            let rows = document.getElementById(tid).getElementsByTagName('tr');
+            for (let r of rows) r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+        }
 
         function getAssetFinancialValue(item) {
             if (item.assetType === 'gold' || item.assetType === 'silver') {
@@ -499,310 +988,619 @@
             return parseFloat(item.currentAmount) || 0;
         }
 
-        // ======================== RENDER TABLES (images from imageData field) ========================
         function renderAllModulesTables() {
-            // Helper to generate image cell
-            const getImageCell = (data) => data ? `<img src="${data}" class="invoice-thumb" onclick="viewImageFull('${data}')" alt="صورة">` : '';
-
-            // Installments
-            let ib = document.getElementById('installmentsTableBody'); ib.innerHTML = '';
-            let totalRem = 0, totalPaid = 0;
-            if (appData.installments.length === 0) ib.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-credit-card-2-front"></i><p>لا توجد أقساط مسجلة بعد</p><button class="btn btn-sm btn-success" onclick="showFormModal('installment')"><i class="bi bi-plus-circle"></i> إضافة قسط جديد</button></div></td></tr>`;
+            let ib = document.getElementById('installmentsTableBody');
+            ib.innerHTML = '';
+            let totalRem = 0,
+                totalPaid = 0;
+            if (appData.installments.length === 0) ib.innerHTML =
+                `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-credit-card-2-front"></i><p>لا توجد أقساط مسجلة بعد</p><button class="btn btn-sm btn-success" onclick="showFormModal('installment')"><i class="bi bi-plus-circle"></i> إضافة قسط جديد</button></div></td></tr>`;
             else appData.installments.forEach((item, idx) => {
-                let paid = parseInt(item.paidCount) || 0, total = parseInt(item.totalCount) || 0;
-                let monthly = parseFloat(item.monthlyAmount) || 0, totalAmt = parseFloat(item.totalAmount) || 0;
+                let paid = parseInt(item.paidCount) || 0,
+                    total = parseInt(item.totalCount) || 0;
+                let monthly = parseFloat(item.monthlyAmount) || 0,
+                    totalAmt = parseFloat(item.totalAmount) || 0;
                 let rem = Math.max(0, totalAmt - (monthly * paid));
-                totalRem += rem; totalPaid += monthly * paid;
+                totalRem += rem;
+                totalPaid += monthly * paid;
                 let next = paid < total ? addMonthsToDateStr(item.startDate, paid) : 'مكتمل';
                 let prog = total > 0 ? Math.round((paid / total) * 100) : 0;
-                ib.innerHTML += `<tr><td><b>${item.entity}</b></td><td>${totalAmt.toLocaleString()} ج</td><td class="text-primary fw-bold">${monthly.toLocaleString()} ج</td><td><span class="badge bg-dark">${paid} / ${total}</span></td><td class="text-danger fw-bold">${rem.toLocaleString()} ج</td><td><div class="progress" style="height:8px;"><div class="progress-bar bg-success" style="width:${prog}%"></div></div><small>${prog}%</small></td><td><span class="badge ${next === 'مكتمل' ? 'bg-success' : 'bg-warning text-dark'}">${next === 'مكتمل' ? '✅ مكتمل' : convertToLocalDate(next)}</span></td><td>${getImageCell(item.imageData)} <button class="btn btn-sm btn-outline-success px-2 py-0" onclick="incrementInstallment(${idx})">+1</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('installment',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('installment',${idx})"><i class="bi bi-trash"></i></button></td></tr>`;
+                ib.innerHTML +=
+                    `<tr><td><b>${item.entity}</b></td><td>${totalAmt.toLocaleString()} ج</td><td class="text-primary fw-bold">${monthly.toLocaleString()} ج</td><td><span class="badge bg-dark">${paid} / ${total}</span></td><td class="text-danger fw-bold">${rem.toLocaleString()} ج</td><td><div class="progress" style="height:8px;"><div class="progress-bar bg-success" style="width:${prog}%"></div></div><small>${prog}%</small></td><td><span class="badge ${next==='مكتمل'?'bg-success':'bg-warning text-dark'}">${next==='مكتمل'?'✅ مكتمل':convertToLocalDate(next)}</span></td><td><button class="btn btn-sm btn-outline-success px-2 py-0" onclick="incrementInstallment(${idx})">+1</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('installment',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('installment',${idx})"><i class="bi bi-trash"></i></button></td></tr>`;
             });
-            document.getElementById('installmentsSummaryCard').innerHTML = `💡 إجمالي الأقساط المسددة: <b>${totalPaid.toLocaleString()} ج</b> | المتبقي الكلي: <b class="text-danger">${totalRem.toLocaleString()} ج</b>`;
+            document.getElementById('installmentsSummaryCard').innerHTML =
+                `💡 إجمالي الأقساط المسددة: <b>${totalPaid.toLocaleString()} ج</b> | المتبقي الكلي: <b class="text-danger">${totalRem.toLocaleString()} ج</b>`;
 
-            // Recurring
-            let rb = document.getElementById('recurringTableBody'); rb.innerHTML = '';
-            if (appData.recurring.length === 0) rb.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-receipt-cutoff"></i><p>لا توجد مصروفات دورية</p><button class="btn btn-sm btn-success" onclick="showFormModal('recurring')"><i class="bi bi-plus-circle"></i> إضافة مصروف</button></div></td></tr>`;
-            else appData.recurring.forEach((item, idx) => { let nd = getNextDateForSpecificDay(item.day); rb.innerHTML += `<tr><td>${item.category}</td><td class="fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>يوم ${item.day}</td><td>${convertToLocalDate(nd)}</td><td>${getImageCell(item.imageData)} <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('recurring',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('recurring',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            let rb = document.getElementById('recurringTableBody');
+            rb.innerHTML = '';
+            if (appData.recurring.length === 0) rb.innerHTML =
+                `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-receipt-cutoff"></i><p>لا توجد مصروفات دورية</p><button class="btn btn-sm btn-success" onclick="showFormModal('recurring')"><i class="bi bi-plus-circle"></i> إضافة مصروف</button></div></td></tr>`;
+            else appData.recurring.forEach((item, idx) => { let nd = getNextDateForSpecificDay(item.day);
+                rb.innerHTML +=
+                    `<tr><td>${item.category}</td><td class="fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>يوم ${item.day}</td><td>${convertToLocalDate(nd)}</td><td><button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('recurring',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('recurring',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
 
-            // Cards
-            let cb = document.getElementById('cardsTableBody'); cb.innerHTML = '';
-            if (appData.cards.length === 0) cb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-credit-card"></i><p>لا توجد مديونيات بطاقات</p><button class="btn btn-sm btn-success" onclick="showFormModal('card')"><i class="bi bi-plus-circle"></i> إضافة مديونية</button></div></td></tr>`;
-            else appData.cards.forEach((item, idx) => { let due = calculateCreditCardDueDate(item.purchaseDate); let days = calculateDaysLeft(due); cb.innerHTML += `<tr><td><b>${item.bank}</b></td><td>${item.cardName}</td><td>${convertToLocalDate(item.purchaseDate)}</td><td class="text-danger fw-bold">${parseFloat(item.requiredAmount).toLocaleString()} ج</td><td>${convertToLocalDate(due)}</td><td><span class="badge ${days < 3 ? 'bg-danger' : 'bg-success'}">${days < 0 ? 'متأخر' : days + ' يوم أمان'}</span></td><td>${getImageCell(item.imageData)} <button class="btn btn-sm btn-outline-primary px-2 py-0" onclick="clearCardDebt(${idx})">✅ تم الدفع</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('card',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('card',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            let cb = document.getElementById('cardsTableBody');
+            cb.innerHTML = '';
+            if (appData.cards.length === 0) cb.innerHTML =
+                `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-credit-card"></i><p>لا توجد مديونيات بطاقات</p><button class="btn btn-sm btn-success" onclick="showFormModal('card')"><i class="bi bi-plus-circle"></i> إضافة مديونية</button></div></td></tr>`;
+            else appData.cards.forEach((item, idx) => { let due = calculateCreditCardDueDate(item.purchaseDate);
+                let days = calculateDaysLeft(due);
+                cb.innerHTML +=
+                    `<tr><td><b>${item.bank}</b></td><td>${item.cardName}</td><td>${convertToLocalDate(item.purchaseDate)}</td><td class="text-danger fw-bold">${parseFloat(item.requiredAmount).toLocaleString()} ج</td><td>${convertToLocalDate(due)}</td><td><span class="badge ${days<3?'bg-danger':'bg-success'}">${days<0?'متأخر':days+' يوم أمان'}</span></td><td><button class="btn btn-sm btn-outline-primary px-2 py-0" onclick="clearCardDebt(${idx})">✅ تم الدفع</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('card',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('card',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
 
-            // Income
-            let inb = document.getElementById('incomeTableBody'); inb.innerHTML = '';
-            if (appData.income.length === 0) inb.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="bi bi-cash-stack"></i><p>لا توجد مصادر دخل مسجلة</p><button class="btn btn-sm btn-success" onclick="showFormModal('income')"><i class="bi bi-plus-circle"></i> إضافة دخل</button></div></td></tr>`;
-            else appData.income.forEach((item, idx) => { inb.innerHTML += `<tr><td>${item.source}</td><td class="text-success fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>يوم ${item.day} شهرياً</td><td>${getImageCell(item.imageData)} <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('income',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('income',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            let inb = document.getElementById('incomeTableBody');
+            inb.innerHTML = '';
+            if (appData.income.length === 0) inb.innerHTML =
+                `<tr><td colspan="4"><div class="empty-state"><i class="bi bi-cash-stack"></i><p>لا توجد مصادر دخل مسجلة</p><button class="btn btn-sm btn-success" onclick="showFormModal('income')"><i class="bi bi-plus-circle"></i> إضافة دخل</button></div></td></tr>`;
+            else appData.income.forEach((item, idx) => { inb.innerHTML +=
+                    `<tr><td>${item.source}</td><td class="text-success fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>يوم ${item.day} شهرياً</td><td><button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('income',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('income',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
 
-            // Savings (simplified example)
-            let sb = document.getElementById('savingsTableBody'); sb.innerHTML = '';
-            if (appData.savings.length === 0) sb.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-safe2"></i><p>لا توجد أصول أو مدخرات بعد</p><button class="btn btn-sm btn-success" onclick="showFormModal('savings')"><i class="bi bi-plus-circle"></i> إضافة أصل جديد</button></div></td></tr>`;
+            let sb = document.getElementById('savingsTableBody');
+            sb.innerHTML = '';
+            if (appData.savings.length === 0) sb.innerHTML =
+                `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-safe2"></i><p>لا توجد أصول أو مدخرات بعد</p><button class="btn btn-sm btn-success" onclick="showFormModal('savings')"><i class="bi bi-plus-circle"></i> إضافة أصل جديد</button></div></td></tr>`;
             else appData.savings.forEach((item, idx) => {
-                let assetType = item.assetType || 'cash'; let tgt = parseFloat(item.targetAmount) || 0;
+                let assetType = item.assetType || 'cash';
+                let tgt = parseFloat(item.targetAmount) || 0;
                 let finValue = getAssetFinancialValue(item);
                 let purchasePrice = parseFloat(item.purchasePrice) || 0;
                 let purchaseDate = item.purchaseDate ? convertToLocalDate(item.purchaseDate) : '-';
                 let pct = tgt > 0 ? Math.min(100, Math.round((finValue / tgt) * 100)) : 100;
-                let badgeColor = assetType === 'gold' ? 'bg-warning text-dark' : (assetType === 'silver' ? 'bg-light text-dark border' : 'bg-primary');
-                let purityText = assetType === 'gold' ? ` عيار ${item.karat || 24}` : (assetType === 'silver' ? ` عيار ${item.silverPurity || '999'}` : '');
-                let assetName = assetType === 'gold' ? `ذهب${purityText}` : (assetType === 'silver' ? `فضة${purityText}` : 'كاش');
-                let purchaseInfo = assetType === 'cash' ? '-' : (purchasePrice > 0 ? purchasePrice.toLocaleString() + ' ج' : '-');
+                let badgeColor = assetType === 'gold' ? 'bg-warning text-dark' : (assetType === 'silver' ?
+                    'bg-light text-dark border' : 'bg-primary');
+                let purityText = assetType === 'gold' ? ` عيار ${item.karat||24}` : (assetType ===
+                    'silver' ? ` عيار ${item.silverPurity||'999'}` : '');
+                let assetName = assetType === 'gold' ? `ذهب${purityText}` : (assetType === 'silver' ?
+                    `فضة${purityText}` : 'كاش');
+                let priceInfo = (assetType === 'gold' || assetType === 'silver') ?
+                    `<br><small class="text-muted">سعر الجرام: ${(parseFloat(item.currentPricePerGram)||0).toLocaleString()} ج</small>` :
+                    '';
+                let purchaseInfo = assetType === 'cash' ? '-' : (purchasePrice > 0 ? purchasePrice
+                    .toLocaleString() + ' ج' : '-');
                 let profitHtml = '';
                 if (assetType !== 'cash' && purchasePrice > 0) {
                     let profit = finValue - purchasePrice;
                     let profitClass = profit >= 0 ? 'text-success' : 'text-danger';
                     let profitSign = profit >= 0 ? '+' : '';
-                    profitHtml = `<br><small class="${profitClass} fw-bold">${profitSign}${profit.toLocaleString()} ج</small>`;
+                    profitHtml =
+                    `<br><small class="${profitClass} fw-bold">${profitSign}${profit.toLocaleString()} ج</small>`;
                 }
                 let purchaseCell = assetType === 'cash' ? '-' : `${purchaseInfo}${profitHtml}`;
-                sb.innerHTML += `<tr><td><span class="badge ${badgeColor}">${assetName}</span></td><td><b>${item.goalName}</b></td><td>${tgt > 0 ? tgt.toLocaleString() + ' (مستهدف)' : finValue.toLocaleString()}</td><td class="text-success fw-bold">${finValue.toLocaleString()} ج</td><td>${purchaseCell}</td><td>${assetType === 'cash' ? '-' : purchaseDate}</td><td>${tgt > 0 ? `<div class="progress" style="height:8px;"><div class="progress-bar bg-info" style="width:${pct}%"></div></div><small>${pct}%</small>` : '<span class="text-muted">أصل عيني</span>'}</td><td>${getImageCell(item.imageData)} <button class="btn btn-sm btn-outline-success px-2 py-0" onclick="quickDepositSavings(${idx})">➕ تعديل</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('savings',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('savings',${idx})"><i class="bi bi-trash"></i></button></td></tr>`;
+                let dateInfo = assetType === 'cash' ? '-' : purchaseDate;
+                sb.innerHTML +=
+                    `<tr><td><span class="badge ${badgeColor}">${assetName}</span></td><td><b>${item.goalName}</b>${priceInfo}</td><td>${tgt>0?tgt.toLocaleString()+' (مستهدف)':finValue.toLocaleString()}</td><td class="text-success fw-bold">${finValue.toLocaleString()} ج</td><td>${purchaseCell}</td><td>${dateInfo}</td><td>${tgt>0?`<div class="progress" style="height:8px;"><div class="progress-bar bg-info" style="width:${pct}%"></div></div><small>${pct}%</small>`:'<span class="text-muted">أصل عيني</span>'}</td><td><button class="btn btn-sm btn-outline-success px-2 py-0" onclick="quickDepositSavings(${idx})">➕ تعديل</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('savings',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('savings',${idx})"><i class="bi bi-trash"></i></button></td></tr>`;
             });
 
-            // Scheduled Debts
-            let sdb = document.getElementById('scheduledDebtsTableBody'); sdb.innerHTML = '';
-            if (appData.scheduledDebts.length === 0) sdb.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-calendar-x"></i><p>لا توجد ديون مجدولة</p><button class="btn btn-sm btn-success" onclick="showFormModal('scheduledDebt')"><i class="bi bi-plus-circle"></i> إضافة دين مجدول</button></div></td></tr>`;
-            else appData.scheduledDebts.forEach((item, idx) => { sdb.innerHTML += `<tr><td><b>${item.description}</b></td><td class="text-danger fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>${convertToLocalDate(item.dueDate)}</td><td class="text-muted small">${item.notes || '-'}</td><td>${getImageCell(item.imageData)} <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('scheduledDebt',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('scheduledDebt',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            let sdb = document.getElementById('scheduledDebtsTableBody');
+            sdb.innerHTML = '';
+            if (appData.scheduledDebts.length === 0) sdb.innerHTML =
+                `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-calendar-x"></i><p>لا توجد ديون مجدولة</p><button class="btn btn-sm btn-success" onclick="showFormModal('scheduledDebt')"><i class="bi bi-plus-circle"></i> إضافة دين مجدول</button></div></td></tr>`;
+            else appData.scheduledDebts.forEach((item, idx) => { sdb.innerHTML +=
+                    `<tr><td><b>${item.description}</b></td><td class="text-danger fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>${convertToLocalDate(item.dueDate)}</td><td class="text-muted small">${item.notes||'-'}</td><td><button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('scheduledDebt',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('scheduledDebt',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
         }
 
-        function viewImageFull(data) {
-            const win = window.open('', '_blank');
-            win.document.write(`<img src="${data}" style="max-width:100%;">`);
+        function changeDashboardView(view) {
+            activeView = view;
+            document.getElementById('btnMonthly').classList.toggle('active', view === 'monthly');
+            document.getElementById('btnYearly').classList.toggle('active', view === 'yearly');
+            document.getElementById('monthSelector').style.display = view === 'monthly' ? 'flex' : 'none';
+            destroyAllCharts();
+            calculateFinanceReport();
         }
 
-        function changeDashboardView(view) { /* unchanged */ }
-        function getDueStatus(dueDate) { /* unchanged */ }
+        function getDueStatus(dueDate) {
+            let today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let due = new Date(dueDate);
+            due.setHours(0, 0, 0, 0);
+            let diff = calculateDaysLeft(due);
+            if (diff < 0) return { text: 'متأخر', class: 'danger' };
+            if (diff === 0) return { text: 'اليوم', class: 'warning' };
+            if (diff <= 3) return { text: `خلال ${diff} أيام`, class: 'warning' };
+            return { text: 'قادم', class: 'info' };
+        }
 
-        function calculateFinanceReport() { /* unchanged, full code present */ }
-        function quickSaveSurplus(amount) { /* unchanged */ }
-        function calculateGlobalOverview() { /* unchanged */ }
-        function updateNetWorthHistory() { /* unchanged */ }
-        function buildNetWorthChart() { /* unchanged */ }
-        function buildChartsLive(income, outAll, inst, rec, crd) { /* unchanged */ }
+        function calculateFinanceReport() {
+            let selMonth = parseInt(document.getElementById('filterMonth').value);
+            let selYear = parseInt(document.getElementById('filterYear').value);
+            let totalIn = 0,
+                totalOutInstallments = 0,
+                totalOutRecurring = 0,
+                totalOutCards = 0,
+                totalOutScheduled = 0;
+            let tableBody = document.querySelector('#dueTable tbody');
+            tableBody.innerHTML = '';
+            let alertBox = document.getElementById('todayAlertBox');
+            alertBox.innerHTML = '';
+            let todayDay = new Date().getDate();
 
-        function incrementInstallment(idx) { /* unchanged */ }
-        function clearCardDebt(idx) { if (confirm("تم سداد مديونية الكارت؟")) { appData.cards.splice(idx, 1); saveAppDataToStorage(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview(); } }
-        function quickDepositSavings(idx) { let amt = prompt("أدخل القيمة أو الوزن الجديد المتوفر حالياً:"); if (amt && !isNaN(amt)) { appData.savings[idx].currentAmount = parseFloat(amt); saveAppDataToStorage(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview(); } }
-        function deleteModuleItem(type, idx) { if (confirm("حذف هذا البند نهائياً؟")) { appData[type].splice(idx, 1); saveAppDataToStorage(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview(); } }
-
-        // ======================== FORM MODAL (with image data) ========================
-        function showFormModal(type, editIndex = null) {
-            currentEditType = type; currentEditIndex = editIndex; let isEdit = editIndex !== null;
-            document.getElementById('formModalTitle').textContent = isEdit ? 'تعديل البيانات الحالية' : 'إضافة بيان جديد';
-            let body = document.getElementById('formModalBody'); body.innerHTML = '';
-
-            const addImageUpload = (existingData = '') => {
-                return `
-                <div class="mt-3 border-top pt-2">
-                    <label class="small text-muted">📎 إرفاق صورة الفاتورة (اختياري):</label>
-                    <input type="file" id="formImageInput" accept="image/*" class="form-control mb-2" onchange="previewFormImage()">
-                    <img id="formImagePreview" class="img-thumbnail mt-1" style="max-height:120px; display:${existingData ? 'block' : 'none'};" src="${existingData || ''}">
-                    ${existingData ? '<p class="small text-success mt-1">تم إرفاق صورة سابقة. يمكنك تغييرها.</p>' : ''}
-                </div>`;
-            };
-
-            if (type === 'installment') {
-                let item = isEdit ? appData.installments[editIndex] : {};
-                body.innerHTML = `
-                    <input type="text" id="in_ent" class="form-control mb-2" placeholder="الجهة / اسم القسط" value="${item.entity||''}">
-                    <input type="number" id="in_tot" class="form-control mb-2" placeholder="المبلغ الإجمالي الكلي" value="${item.totalAmount||''}">
-                    <input type="number" id="in_mon" class="form-control mb-2" placeholder="قيمة القسط الشهري" value="${item.monthlyAmount||''}">
-                    <input type="number" id="in_cnt" class="form-control mb-2" placeholder="عدد الشهور الإجمالي" value="${item.totalCount||''}">
-                    <input type="number" id="in_pad" class="form-control mb-2" placeholder="عدد الشهور المدفوعة سابقاً" value="${item.paidCount||0}">
-                    <label class="small text-muted">تاريخ استحقاق أول قسط:</label>
-                    <input type="date" id="in_str" class="form-control" value="${item.startDate||''}">
-                    ${addImageUpload(item.imageData || '')}
-                `;
-            } else if (type === 'recurring') {
-                let item = isEdit ? appData.recurring[editIndex] : {};
-                body.innerHTML = `
-                    <input type="text" id="re_cat" class="form-control mb-2" placeholder="فئة المصروف" value="${item.category||''}">
-                    <input type="number" id="re_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}">
-                    <input type="number" id="re_day" class="form-control" placeholder="يوم الاستحقاق (1-31)" value="${item.day||''}">
-                    ${addImageUpload(item.imageData || '')}
-                `;
-            } else if (type === 'card') {
-                let item = isEdit ? appData.cards[editIndex] : {};
-                body.innerHTML = `
-                    <input type="text" id="ca_bnk" class="form-control mb-2" placeholder="اسم البنك" value="${item.bank||''}">
-                    <input type="text" id="ca_nam" class="form-control mb-2" placeholder="نوع الكارت" value="${item.cardName||''}">
-                    <input type="number" id="ca_req" class="form-control mb-2" placeholder="المبلغ المطلوب" value="${item.requiredAmount||''}">
-                    <label class="small text-muted">تاريخ الشراء:</label>
-                    <input type="date" id="ca_pdt" class="form-control" value="${item.purchaseDate||''}">
-                    ${addImageUpload(item.imageData || '')}
-                `;
-            } else if (type === 'income') {
-                let item = isEdit ? appData.income[editIndex] : {};
-                body.innerHTML = `
-                    <input type="text" id="inc_src" class="form-control mb-2" placeholder="مصدر الدخل" value="${item.source||''}">
-                    <input type="number" id="inc_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}">
-                    <input type="number" id="inc_day" class="form-control" placeholder="يوم الاستلام (1-31)" value="${item.day||''}">
-                    ${addImageUpload(item.imageData || '')}
-                `;
-            } else if (type === 'savings') {
-                let item = isEdit ? appData.savings[editIndex] : {};
-                body.innerHTML = `
-                    <label class="small fw-bold mb-1">نوع الأصل:</label>
-                    <select id="sav_type" class="form-select mb-2" onchange="adjustSavingsInputs()">
-                        <option value="cash" ${item.assetType=='cash'?'selected':''}>💵 كاش</option>
-                        <option value="gold" ${item.assetType=='gold'?'selected':''}>🟡 ذهب</option>
-                        <option value="silver" ${item.assetType=='silver'?'selected':''}>⚪ فضة</option>
-                    </select>
-                    <input type="text" id="sav_nam" class="form-control mb-2" placeholder="اسم الصندوق" value="${item.goalName||''}">
-                    <input type="number" id="sav_cur" class="form-control mb-2" placeholder="${(item.assetType=='gold'||item.assetType=='silver')?'الوزن بالجرام':'الرصيد بالجنيه'}" value="${item.currentAmount||0}">
-                    <input type="number" id="sav_tgt" class="form-control mb-2" placeholder="${(item.assetType=='gold'||item.assetType=='silver')?'المستهدف بالجرام':'المستهدف بالجنيه'}" value="${item.targetAmount||0}">
-                    <div id="sav_extra_fields"></div>
-                    ${addImageUpload(item.imageData || '')}
-                `;
-            } else if (type === 'scheduledDebt') {
-                let item = isEdit ? appData.scheduledDebts[editIndex] : {};
-                body.innerHTML = `
-                    <input type="text" id="sd_desc" class="form-control mb-2" placeholder="وصف الدين" value="${item.description||''}">
-                    <input type="number" id="sd_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}">
-                    <label class="small text-muted">تاريخ الاستحقاق:</label>
-                    <input type="date" id="sd_date" class="form-control mb-2" value="${item.dueDate||''}">
-                    <textarea id="sd_notes" class="form-control" rows="2" placeholder="ملاحظات">${item.notes||''}</textarea>
-                    ${addImageUpload(item.imageData || '')}
-                `;
+            if (activeView === 'monthly') {
+                appData.income.forEach(item => totalIn += parseFloat(item.amount) || 0);
+                appData.installments.forEach(item => {
+                    let total = parseInt(item.totalCount) || 0;
+                    let monthly = parseFloat(item.monthlyAmount) || 0;
+                    for (let i = 0; i < total; i++) {
+                        let due = new Date(addMonthsToDateStr(item.startDate, i));
+                        if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) {
+                            totalOutInstallments += monthly;
+                            let status = getDueStatus(due);
+                            tableBody.innerHTML +=
+                                `<tr><td><span class="badge bg-danger">قسط شهري</span></td><td><b>${item.entity}</b> (القسط رقم ${i+1} من ${total})</td><td>${convertToLocalDate(due)}</td><td>${monthly.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                        }
+                    }
+                });
+                appData.recurring.forEach(item => {
+                    let amt = parseFloat(item.amount) || 0;
+                    let due = getNextDateForSpecificDay(item.day);
+                    if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) {
+                        totalOutRecurring += amt;
+                        let status = getDueStatus(due);
+                        tableBody.innerHTML +=
+                            `<tr><td><span class="badge bg-info">مصروف ثابت</span></td><td>${item.category}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                    }
+                    if (parseInt(item.day) === todayDay) alertBox.innerHTML +=
+                        `<div class="today-alert" style="border-right:4px solid var(--warning);background:var(--warning-soft);padding:14px 18px;border-radius:var(--radius-md);margin-bottom:16px;">🔔 <b>استحقاق اليوم:</b> سداد بند المصروفات الدوري (<b>${item.category}</b>) بقيمة <b>${amt.toLocaleString()} ج</b>.</div>`;
+                });
+                appData.cards.forEach(item => {
+                    let amt = parseFloat(item.requiredAmount) || 0;
+                    let due = calculateCreditCardDueDate(item.purchaseDate);
+                    if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) {
+                        totalOutCards += amt;
+                        let status = getDueStatus(due);
+                        tableBody.innerHTML +=
+                            `<tr><td><span class="badge bg-warning text-dark">كارت ائتمان</span></td><td>مديونية بنك ${item.bank} - كارت ${item.cardName}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                    }
+                });
+                appData.scheduledDebts.forEach(item => {
+                    let amt = parseFloat(item.amount) || 0;
+                    let due = new Date(item.dueDate);
+                    if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) {
+                        totalOutScheduled += amt;
+                        let status = getDueStatus(due);
+                        tableBody.innerHTML +=
+                            `<tr><td><span class="badge bg-dark">دين مجدول</span></td><td>${item.description}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                    }
+                });
+            } else {
+                appData.income.forEach(item => totalIn += (parseFloat(item.amount) || 0) * 12);
+                appData.recurring.forEach(item => totalOutRecurring += (parseFloat(item.amount) || 0) * 12);
+                appData.installments.forEach(item => {
+                    let total = parseInt(item.totalCount) || 0;
+                    let monthly = parseFloat(item.monthlyAmount) || 0;
+                    for (let i = 0; i < total; i++) {
+                        let due = new Date(addMonthsToDateStr(item.startDate, i));
+                        if (due.getFullYear() === selYear) { totalOutInstallments += monthly; }
+                    }
+                });
+                appData.cards.forEach(item => {
+                    let amt = parseFloat(item.requiredAmount) || 0;
+                    let due = calculateCreditCardDueDate(item.purchaseDate);
+                    if (due.getFullYear() === selYear) { totalOutCards += amt; }
+                });
+                appData.scheduledDebts.forEach(item => {
+                    let amt = parseFloat(item.amount) || 0;
+                    let due = new Date(item.dueDate);
+                    if (due.getFullYear() === selYear) { totalOutScheduled += amt; }
+                });
             }
+            let totalOutAll = totalOutInstallments + totalOutRecurring + totalOutCards + totalOutScheduled;
+            let netSavings = totalIn - totalOutAll;
+            document.getElementById('statsContainer').innerHTML = `
+            <div class="col-md-3 col-6"><div class="glass-card text-center border-success"><h6 style="color:var(--success);">💰 الدخل الإجمالي</h6><h4 class="fw-bold" style="color:var(--success);">${totalIn.toLocaleString()} ج</h4></div></div>
+            <div class="col-md-3 col-6"><div class="glass-card text-center border-danger"><h6 style="color:var(--danger);">💳 الأقساط المطلوب</h6><h4 class="fw-bold" style="color:var(--danger);">${totalOutInstallments.toLocaleString()} ج</h4></div></div>
+            <div class="col-md-3 col-6"><div class="glass-card text-center border-warning"><h6 style="color:#e0a800;">💳 مديونية الكروت</h6><h4 class="fw-bold" style="color:#e0a800;">${totalOutCards.toLocaleString()} ج</h4></div></div>
+            <div class="col-md-3 col-6"><div class="glass-card text-center border-info"><h6 style="color:var(--info);">🧾 فئات المصروفات</h6><h4 class="fw-bold" style="color:var(--info);">${totalOutRecurring.toLocaleString()} ج</h4></div></div>
+            <div class="col-12"><div class="glass-card text-center ${netSavings>=0?'border-primary':'border-dark'}"><h5>💵 صافي السيولة الفائضة أو العجز المتوقع بالفترة</h5><h3 class="fw-bold" style="color:${netSavings>=0?'var(--accent)':'var(--danger)'};">${netSavings.toLocaleString()} ج</h3>${netSavings>0?`<button class="btn btn-sm btn-success mt-2" onclick="quickSaveSurplus(${netSavings})"><i class="bi bi-safe2"></i> إيداع الفائض في الادخار</button>`:''}</div></div>`;
+            if (tableBody.innerHTML === '') tableBody.innerHTML =
+                `<tr><td colspan="5" class="text-center text-muted">لا توجد أي التزامات مالية أو أقساط مستحقة خلال الفترة المحددة.</td></tr>`;
+            buildChartsLive(totalIn, totalOutAll, totalOutInstallments, totalOutRecurring, totalOutCards +
+                totalOutScheduled);
+            buildNetWorthChart();
+            showRandomTip();
+        }
 
+        function quickSaveSurplus(amount) {
+            if (confirm(`هل تريد إضافة الفائض ${amount.toLocaleString()} ج إلى صندوق ادخار جديد أو موجود؟`))
+        showFormModal('savings'); }
+
+        function calculateGlobalOverview() {
+            let grandTotalDebtOriginal = 0,
+                grandTotalDebtRemaining = 0,
+                grandTotalCardsDebt = 0,
+                grandTotalAssets = 0,
+                grandTotalScheduled = 0;
+            appData.installments.forEach(item => {
+                let ta = parseFloat(item.totalAmount) || 0;
+                let mo = parseFloat(item.monthlyAmount) || 0;
+                let pa = parseInt(item.paidCount) || 0;
+                grandTotalDebtOriginal += ta;
+                grandTotalDebtRemaining += Math.max(0, ta - (mo * pa));
+            });
+            appData.cards.forEach(item => grandTotalCardsDebt += parseFloat(item.requiredAmount) || 0);
+            appData.scheduledDebts.forEach(item => grandTotalScheduled += parseFloat(item.amount) || 0);
+            let totalWhatYouOwe = grandTotalDebtRemaining + grandTotalCardsDebt + grandTotalScheduled;
+            appData.savings.forEach(item => grandTotalAssets += getAssetFinancialValue(item));
+            let netWorth = grandTotalAssets - totalWhatYouOwe;
+            let totalDebtPaidSoFar = grandTotalDebtOriginal - grandTotalDebtRemaining;
+            let debtProgressPercent = grandTotalDebtOriginal > 0 ? Math.round((totalDebtPaidSoFar /
+                grandTotalDebtOriginal) * 100) : 100;
+            document.getElementById('globalOverviewCards').innerHTML = `
+            <div class="col-md-4"><div class="glass-card text-center border-success h-100"><h5 style="color:var(--success);">💰 إجمالي الأصول والمدخرات (اللى ليك)</h5><h3 class="fw-bold mt-2" style="color:var(--success);">${grandTotalAssets.toLocaleString()} ج</h3><p class="small text-muted mb-0">قيمة الصناديق، الكاش والأصول العينية (الذهب والفضة بسعر السوق الحالي)</p></div></div>
+            <div class="col-md-4"><div class="glass-card text-center border-danger h-100"><h5 style="color:var(--danger);">💸 الالتزامات والمديونيات الكلية (اللى عليك)</h5><h3 class="fw-bold mt-2" style="color:var(--danger);">${totalWhatYouOwe.toLocaleString()} ج</h3><p class="small text-muted mb-0">متبقي الأقساط (${grandTotalDebtRemaining.toLocaleString()} ج) + الكروت (${grandTotalCardsDebt.toLocaleString()} ج) + المجدولة (${grandTotalScheduled.toLocaleString()} ج)</p></div></div>
+            <div class="col-md-4"><div class="glass-card text-center ${netWorth>=0?'border-primary':'border-dark'} h-100"><h5>⚖️ الوضع المالي الصافي الحالي</h5><h2 class="fw-bold mt-2" style="color:${netWorth>=0?'var(--accent)':'var(--danger)'};">${netWorth.toLocaleString()} ج</h2><p class="small text-muted mb-0">${netWorth>=0?'✅ موقفك المالي ممتاز (فائض أصولك يغطي ديونك)':'⚠️ عجز مالي مؤقت (مجموع الالتزامات الكلية أكبر من الكاش والأصول الحالية)'}</p></div></div>`;
+            document.getElementById('globalDebtProgressBar').innerHTML =
+                `<div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width:${debtProgressPercent}%;border-radius:20px;">${debtProgressPercent}%</div>`;
+            document.getElementById('globalDebtProgressText').innerHTML =
+                `لقد قمت بسداد سلفيات وأقساط بقيمة <b class="text-success">${totalDebtPaidSoFar.toLocaleString()} ج</b> من أصل مديونيات مسجلة كلياً بقيمة <b>${grandTotalDebtOriginal.toLocaleString()} ج</b>. المتبقي للجهات: <b class="text-danger">${grandTotalDebtRemaining.toLocaleString()} ج</b>`;
+            updateNetWorthHistory();
+        }
+
+        function updateNetWorthHistory() {
+            let netWorth = 0;
+            appData.savings.forEach(item => netWorth += getAssetFinancialValue(item));
+            let totalDebt = 0;
+            appData.installments.forEach(item => {
+                let ta = parseFloat(item.totalAmount) || 0;
+                let mo = parseFloat(item.monthlyAmount) || 0;
+                let pa = parseInt(item.paidCount) || 0;
+                totalDebt += Math.max(0, ta - (mo * pa));
+            });
+            appData.cards.forEach(item => totalDebt += parseFloat(item.requiredAmount) || 0);
+            appData.scheduledDebts.forEach(item => totalDebt += parseFloat(item.amount) || 0);
+            let currentNet = netWorth - totalDebt;
+            let history = JSON.parse(localStorage.getItem('egyup_networth_history') || '[]');
+            let now = new Date();
+            let monthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            let existing = history.find(h => h.month === monthKey);
+            if (existing) existing.value = currentNet;
+            else {
+                history.push({ month: monthKey, value: currentNet });
+                if (history.length > 12) history.shift();
+            }
+            localStorage.setItem('egyup_networth_history', JSON.stringify(history));
+            buildNetWorthChart();
+        }
+
+        function buildNetWorthChart() {
+            let ctx = document.getElementById('netWorthChart');
+            if (!ctx) return;
+            let isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            let labelColor = isDark ? '#e8e6f0' : '#2d2b32';
+            let history = JSON.parse(localStorage.getItem('egyup_networth_history') || '[]');
+            if (history.length === 0) {
+                let netWorth = 0;
+                appData.savings.forEach(item => netWorth += getAssetFinancialValue(item));
+                let totalDebt = 0;
+                appData.installments.forEach(item => {
+                    let ta = parseFloat(item.totalAmount) || 0;
+                    let mo = parseFloat(item.monthlyAmount) || 0;
+                    let pa = parseInt(item.paidCount) || 0;
+                    totalDebt += Math.max(0, ta - (mo * pa));
+                });
+                appData.cards.forEach(item => totalDebt += parseFloat(item.requiredAmount) || 0);
+                appData.scheduledDebts.forEach(item => totalDebt += parseFloat(item.amount) || 0);
+                let now = new Date();
+                let monthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+                history = [{ month: monthKey, value: netWorth - totalDebt }];
+            }
+            if (chartInstanceNetWorth) chartInstanceNetWorth.destroy();
+            chartInstanceNetWorth = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: history.map(h => h.month),
+                    datasets: [{
+                        label: 'صافي الثروة (ج)',
+                        data: history.map(h => h.value),
+                        borderColor: '#6c5ce7',
+                        backgroundColor: 'rgba(108,92,231,0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#6c5ce7',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 8,
+                        pointRadius: 5,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: labelColor, font: { family: 'Cairo' } } } },
+                    scales: {
+                        y: { ticks: { color: labelColor, font: { family: 'Cairo' } },
+                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' } },
+                        x: { ticks: { color: labelColor, font: { family: 'Cairo' } },
+                    grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function buildChartsLive(income, outAll, inst, rec, crd) {
+            let ctxBar = document.getElementById('barChart'),
+                ctxDoughnut = document.getElementById('doughnutChart');
+            if (!ctxBar || !ctxDoughnut) return;
+            let isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            let labelColor = isDark ? '#e8e6f0' : '#2d2b32';
+            if (chartInstanceBar) chartInstanceBar.destroy();
+            if (chartInstanceDoughnut) chartInstanceDoughnut.destroy();
+            chartInstanceBar = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['إجمالي الدخل', 'التزامات الفترة'],
+                    datasets: [{ data: [income, outAll], backgroundColor: ['#00b894', '#e17055'],
+                        borderRadius: 8, borderWidth: 0 }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } },
+                    scales: { y: { ticks: { color: labelColor } }, x: { ticks: { color: labelColor } } } }
+            });
+            chartInstanceDoughnut = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['الأقساط', 'المصروفات', 'الكروت والديون'],
+                    datasets: [{ data: [inst, rec, crd], backgroundColor: ['#6c5ce7', '#74b9ff', '#fdcb6e'],
+                        borderColor: isDark ? '#1a1825' : '#ffffff', borderWidth: 3 }]
+                },
+                options: { responsive: true, cutout: '65%',
+                    plugins: { legend: { labels: { color: labelColor, font: { family: 'Cairo' } } } } }
+            });
+        }
+
+        function incrementInstallment(idx) {
+            if ((parseInt(appData.installments[idx].paidCount) || 0) < (parseInt(appData.installments[idx]
+                .totalCount) || 0)) {
+                appData.installments[idx].paidCount = (parseInt(appData.installments[idx].paidCount) || 0) + 1;
+                saveAppDataToStorage();
+                renderAllModulesTables();
+                calculateFinanceReport();
+                calculateGlobalOverview();
+            }
+        }
+
+        function clearCardDebt(idx) {
+            if (confirm("تم سداد مديونية الكارت؟")) { appData.cards.splice(idx, 1);
+                saveAppDataToStorage();
+                renderAllModulesTables();
+                calculateFinanceReport();
+                calculateGlobalOverview(); }
+        }
+
+        function quickDepositSavings(idx) {
+            let amt = prompt("أدخل القيمة أو الوزن الجديد المتوفر حالياً:");
+            if (amt && !isNaN(amt)) { appData.savings[idx].currentAmount = parseFloat(amt);
+                saveAppDataToStorage();
+                renderAllModulesTables();
+                calculateFinanceReport();
+                calculateGlobalOverview(); }
+        }
+
+        function deleteModuleItem(type, idx) {
+            if (confirm("حذف هذا البند نهائياً؟")) {
+                if (type === 'installment') appData.installments.splice(idx, 1);
+                else if (type === 'recurring') appData.recurring.splice(idx, 1);
+                else if (type === 'card') appData.cards.splice(idx, 1);
+                else if (type === 'income') appData.income.splice(idx, 1);
+                else if (type === 'savings') appData.savings.splice(idx, 1);
+                else if (type === 'scheduledDebt') appData.scheduledDebts.splice(idx, 1);
+                saveAppDataToStorage();
+                renderAllModulesTables();
+                calculateFinanceReport();
+                calculateGlobalOverview();
+            }
+        }
+
+        function showFormModal(type, editIndex = null) {
+            currentEditType = type;
+            currentEditIndex = editIndex;
+            let isEdit = editIndex !== null;
+            document.getElementById('formModalTitle').textContent = isEdit ? 'تعديل البيانات الحالية' :
+                'إضافة بيان جديد';
+            let body = document.getElementById('formModalBody');
+            body.innerHTML = '';
+            if (type === 'installment') { let item = isEdit ? appData.installments[editIndex] : {};
+                body.innerHTML =
+                    `<input type="text" id="in_ent" class="form-control mb-2" placeholder="الجهة / اسم القسط" value="${item.entity||''}"><input type="number" id="in_tot" class="form-control mb-2" placeholder="المبلغ الإجمالي الكلي" value="${item.totalAmount||''}"><input type="number" id="in_mon" class="form-control mb-2" placeholder="قيمة القسط الشهري" value="${item.monthlyAmount||''}"><input type="number" id="in_cnt" class="form-control mb-2" placeholder="عدد الشهور الإجمالي" value="${item.totalCount||''}"><input type="number" id="in_pad" class="form-control mb-2" placeholder="عدد الشهور المدفوعة سابقاً" value="${item.paidCount||0}"><label class="small text-muted">تاريخ استحقاق أول قسط:</label><input type="date" id="in_str" class="form-control" value="${item.startDate||''}">`; } else if (
+                type === 'recurring') { let item = isEdit ? appData.recurring[editIndex] : {};
+                body.innerHTML =
+                    `<input type="text" id="re_cat" class="form-control mb-2" placeholder="فئة المصروف (مثل: إيجار، إنترنت)" value="${item.category||''}"><input type="number" id="re_amt" class="form-control mb-2" placeholder="المبلغ المالي المخصص" value="${item.amount||''}"><input type="number" id="re_day" class="form-control" placeholder="يوم الاستحقاق في الشهر (1 - 31)" value="${item.day||''}">`; } else if (
+                type === 'card') { let item = isEdit ? appData.cards[editIndex] : {};
+                body.innerHTML =
+                    `<input type="text" id="ca_bnk" class="form-control mb-2" placeholder="اسم البنك المصدر" value="${item.bank||''}"><input type="text" id="ca_nam" class="form-control mb-2" placeholder="نوع الكارت / البطاقة" value="${item.cardName||''}"><input type="number" id="ca_req" class="form-control mb-2" placeholder="المبلغ المطلوب سداده" value="${item.requiredAmount||''}"><label class="small text-muted">تاريخ حركة الشراء الفعلي:</label><input type="date" id="ca_pdt" class="form-control" value="${item.purchaseDate||''}">`; } else if (
+                type === 'income') { let item = isEdit ? appData.income[editIndex] : {};
+                body.innerHTML =
+                    `<input type="text" id="inc_src" class="form-control mb-2" placeholder="مصدر الإيراد والدخل" value="${item.source||''}"><input type="number" id="inc_amt" class="form-control mb-2" placeholder="المبلغ الصافي" value="${item.amount||''}"><input type="number" id="inc_day" class="form-control" placeholder="يوم الاستلام المتوقع في الشهر" value="${item.day||''}">`; } else if (
+                type === 'savings') { let item = isEdit ? appData.savings[editIndex] : {};
+                body.innerHTML = `
+                <label class="small fw-bold mb-1">نوع الأصل المدخر:</label>
+                <select id="sav_type" class="form-select mb-2" onchange="adjustSavingsInputs()">
+                    <option value="cash" ${item.assetType==='cash'?'selected':''}>💵 كاش ونقدي</option>
+                    <option value="gold" ${item.assetType==='gold'?'selected':''}>🟡 ذهب (سبائك / مشغولات)</option>
+                    <option value="silver" ${item.assetType==='silver'?'selected':''}>⚪ فضة (سبائك / عملات)</option>
+                </select>
+                <input type="text" id="sav_nam" class="form-control mb-2" placeholder="اسم الصندوق أو الوصف" value="${item.goalName||''}">
+                <input type="number" id="sav_cur" class="form-control mb-2" placeholder="${(item.assetType==='gold'||item.assetType==='silver')?'الوزن الحالي بالجرام':'الرصيد الحالي بالجنيه'}" value="${item.currentAmount||0}">
+                <input type="number" id="sav_tgt" class="form-control mb-2" placeholder="${(item.assetType==='gold'||item.assetType==='silver')?'المستهدف بالجرام':'المستهدف الكلي بالجنيه'}" value="${item.targetAmount||0}">
+                <div id="sav_extra_fields"></div>`; } else if (type === 'scheduledDebt') { let item = isEdit ? appData
+                    .scheduledDebts[editIndex] : {};
+                body.innerHTML =
+                    `<input type="text" id="sd_desc" class="form-control mb-2" placeholder="وصف الدين (مثلاً: سداد قرض شخصي)" value="${item.description||''}"><input type="number" id="sd_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}"><label class="small text-muted">تاريخ الاستحقاق:</label><input type="date" id="sd_date" class="form-control mb-2" value="${item.dueDate||''}"><textarea id="sd_notes" class="form-control" rows="2" placeholder="ملاحظات إضافية">${item.notes||''}</textarea>`; }
             document.getElementById('formModalSubmitBtn').onclick = processFormSubmit;
             new bootstrap.Modal(document.getElementById('formModal')).show();
             if (type === 'savings') adjustSavingsInputs();
         }
 
-        function previewFormImage() {
-            const file = document.getElementById('formImageInput')?.files[0];
-            const preview = document.getElementById('formImagePreview');
-            if (file && preview) {
-                const reader = new FileReader();
-                reader.onload = (e) => { preview.src = e.target.result; preview.style.display = 'block'; };
-                reader.readAsDataURL(file);
-            } else if (preview) { preview.style.display = 'none'; }
-        }
-
         function adjustSavingsInputs() {
             let type = document.getElementById('sav_type')?.value;
-            let cur = document.getElementById('sav_cur'); let tgt = document.getElementById('sav_tgt');
+            let cur = document.getElementById('sav_cur');
+            let tgt = document.getElementById('sav_tgt');
             let extraDiv = document.getElementById('sav_extra_fields');
-            if (!extraDiv) return;
             if (type === 'gold') {
-                if (cur) cur.placeholder = 'الوزن الحالي بالجرام'; if (tgt) tgt.placeholder = 'المستهدف بالجرام';
+                if (cur) cur.placeholder = 'الوزن الحالي بالجرام';
+                if (tgt) tgt.placeholder = 'المستهدف بالجرام';
                 let karatVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].karat || 24) : 24;
-                let priceVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].currentPricePerGram || '') : '';
-                let purchaseVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].purchasePrice || '') : '';
+                let priceVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].currentPricePerGram ||
+                    '') : '';
+                let purchaseVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].purchasePrice || '') :
+                    '';
                 let pdateVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].purchaseDate || '') : '';
-                extraDiv.innerHTML = `<label class="small text-muted">عيار الذهب:</label><select id="sav_karat" class="form-select mb-2"><option value="24" ${karatVal==24?'selected':''}>24</option><option value="21" ${karatVal==21?'selected':''}>21</option><option value="18" ${karatVal==18?'selected':''}>18</option></select><input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام" value="${priceVal}"><input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء" value="${purchaseVal}"><label class="small text-muted">تاريخ الحيازة:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
+                extraDiv.innerHTML = `
+                <label class="small text-muted">عيار الذهب:</label>
+                <select id="sav_karat" class="form-select mb-2"><option value="24" ${karatVal==24?'selected':''}>24 قيراط</option><option value="21" ${karatVal==21?'selected':''}>21 قيراط</option><option value="18" ${karatVal==18?'selected':''}>18 قيراط</option></select>
+                <input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام الحالي بالمصري" value="${priceVal}">
+                <input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء الإجمالي بالجنيه" value="${purchaseVal}">
+                <label class="small text-muted">تاريخ الحيازة:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
             } else if (type === 'silver') {
-                if (cur) cur.placeholder = 'الوزن الحالي بالجرام'; if (tgt) tgt.placeholder = 'المستهدف بالجرام';
-                let purityVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].silverPurity || '999') : '999';
-                let priceVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].currentPricePerGram || '') : '';
-                let purchaseVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].purchasePrice || '') : '';
+                if (cur) cur.placeholder = 'الوزن الحالي بالجرام';
+                if (tgt) tgt.placeholder = 'المستهدف بالجرام';
+                let purityVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].silverPurity || '999') :
+                    '999';
+                let priceVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].currentPricePerGram ||
+                    '') : '';
+                let purchaseVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].purchasePrice || '') :
+                    '';
                 let pdateVal = currentEditIndex !== null ? (appData.savings[currentEditIndex].purchaseDate || '') : '';
-                extraDiv.innerHTML = `<label class="small text-muted">عيار الفضة:</label><select id="sav_purity" class="form-select mb-2"><option value="999" ${purityVal=='999'?'selected':''}>999</option><option value="925" ${purityVal=='925'?'selected':''}>925</option></select><input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام" value="${priceVal}"><input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء" value="${purchaseVal}"><label class="small text-muted">تاريخ الحيازة:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
+                extraDiv.innerHTML = `
+                <label class="small text-muted">عيار الفضة:</label>
+                <select id="sav_purity" class="form-select mb-2">
+                    <option value="999" ${purityVal=='999'?'selected':''}>999 (فضة نقية)</option>
+                    <option value="958" ${purityVal=='958'?'selected':''}>958 (بريطانيا)</option>
+                    <option value="925" ${purityVal=='925'?'selected':''}>925 (استرليني)</option>
+                    <option value="900" ${purityVal=='900'?'selected':''}>900 (عملات)</option>
+                    <option value="800" ${purityVal=='800'?'selected':''}>800 (مجوهرات)</option>
+                </select>
+                <input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام الحالي بالمصري" value="${priceVal}">
+                <input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء الإجمالي بالجنيه" value="${purchaseVal}">
+                <label class="small text-muted">تاريخ الحيازة:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
             } else {
-                if (cur) cur.placeholder = 'الرصيد الحالي بالجنيه'; if (tgt) tgt.placeholder = 'المستهدف الكلي بالجنيه';
+                if (cur) cur.placeholder = 'الرصيد الحالي بالجنيه';
+                if (tgt) tgt.placeholder = 'المستهدف الكلي بالجنيه';
                 extraDiv.innerHTML = '';
             }
         }
 
         function editModuleItem(type, idx) { showFormModal(type, idx); }
 
-        // ======================== PROCESS FORM SUBMIT ========================
         function processFormSubmit() {
-            const submitBtn = document.getElementById('formModalSubmitBtn');
-            submitBtn.disabled = true;
+            let type = currentEditType,
+                idx = currentEditIndex,
+                isEdit = idx !== null,
+                obj = {};
+            const isEmptyOrZero = v => v === null || v === undefined || v === '' || String(v).trim() === '' || Number(
+                v) === 0;
+            const showErr = m => alert(`⚠️ ${m}\nالرجاء ملء جميع الحقول الأساسية بقيم صحيحة غير صفرية.`);
             try {
-                let type = currentEditType, idx = currentEditIndex, isEdit = idx !== null, obj = {};
-                const isEmptyOrZero = v => v === null || v === undefined || v === '' || String(v).trim() === '' || Number(v) === 0;
-                const showErr = m => { alert(`⚠️ ${m}`); submitBtn.disabled = false; };
-
-                // Build object from form fields (same as before but add imageData)
                 if (type === 'installment') {
-                    let entity = document.getElementById('in_ent')?.value?.trim() || '', totalAmount = parseFloat(document.getElementById('in_tot')?.value) || 0, monthlyAmount = parseFloat(document.getElementById('in_mon')?.value) || 0, totalCount = parseInt(document.getElementById('in_cnt')?.value) || 0, startDate = document.getElementById('in_str')?.value || '';
-                    if (isEmptyOrZero(entity) || isEmptyOrZero(totalAmount) || isEmptyOrZero(monthlyAmount) || isEmptyOrZero(totalCount) || isEmptyOrZero(startDate)) { showErr('بيانات القسط غير مكتملة!'); return; }
-                    obj = { entity, totalAmount, monthlyAmount, totalCount, paidCount: parseInt(document.getElementById('in_pad')?.value) || 0, startDate };
+                    let entity = document.getElementById('in_ent')?.value?.trim() || '',
+                        totalAmount = parseFloat(document.getElementById('in_tot')?.value) || 0,
+                        monthlyAmount = parseFloat(document.getElementById('in_mon')?.value) || 0,
+                        totalCount = parseInt(document.getElementById('in_cnt')?.value) || 0,
+                        startDate = document.getElementById('in_str')?.value || '';
+                    if (isEmptyOrZero(entity) || isEmptyOrZero(totalAmount) || isEmptyOrZero(monthlyAmount) ||
+                        isEmptyOrZero(totalCount) || isEmptyOrZero(startDate)) { showErr(
+                        'بيانات القسط غير مكتملة!');
+                        return; }
+                    obj = { entity, totalAmount, monthlyAmount, totalCount, paidCount: parseInt(document
+                            .getElementById('in_pad')?.value) || 0,
+                        startDate };
                 } else if (type === 'recurring') {
-                    let category = document.getElementById('re_cat')?.value?.trim() || '', amount = parseFloat(document.getElementById('re_amt')?.value) || 0, day = parseInt(document.getElementById('re_day')?.value) || 0;
-                    if (isEmptyOrZero(category) || isEmptyOrZero(amount) || isEmptyOrZero(day)) { showErr('بيانات المصروف غير مكتملة!'); return; }
+                    let category = document.getElementById('re_cat')?.value?.trim() || '',
+                        amount = parseFloat(document.getElementById('re_amt')?.value) || 0,
+                        day = parseInt(document.getElementById('re_day')?.value) || 0;
+                    if (isEmptyOrZero(category) || isEmptyOrZero(amount) || isEmptyOrZero(day)) { showErr(
+                            'بيانات المصروف غير مكتملة!');
+                        return; }
                     obj = { category, amount, day };
                 } else if (type === 'card') {
-                    let bank = document.getElementById('ca_bnk')?.value?.trim() || '', cardName = document.getElementById('ca_nam')?.value?.trim() || '', requiredAmount = parseFloat(document.getElementById('ca_req')?.value) || 0, purchaseDate = document.getElementById('ca_pdt')?.value || '';
-                    if (isEmptyOrZero(bank) || isEmptyOrZero(cardName) || isEmptyOrZero(requiredAmount) || isEmptyOrZero(purchaseDate)) { showErr('بيانات الكارت غير مكتملة!'); return; }
+                    let bank = document.getElementById('ca_bnk')?.value?.trim() || '',
+                        cardName = document.getElementById('ca_nam')?.value?.trim() || '',
+                        requiredAmount = parseFloat(document.getElementById('ca_req')?.value) || 0,
+                        purchaseDate = document.getElementById('ca_pdt')?.value || '';
+                    if (isEmptyOrZero(bank) || isEmptyOrZero(cardName) || isEmptyOrZero(requiredAmount) ||
+                        isEmptyOrZero(purchaseDate)) { showErr('بيانات الكارت غير مكتملة!');
+                        return; }
                     obj = { bank, cardName, requiredAmount, purchaseDate };
                 } else if (type === 'income') {
-                    let source = document.getElementById('inc_src')?.value?.trim() || '', amount = parseFloat(document.getElementById('inc_amt')?.value) || 0, day = parseInt(document.getElementById('inc_day')?.value) || 0;
-                    if (isEmptyOrZero(source) || isEmptyOrZero(amount) || isEmptyOrZero(day)) { showErr('بيانات الدخل غير مكتملة!'); return; }
+                    let source = document.getElementById('inc_src')?.value?.trim() || '',
+                        amount = parseFloat(document.getElementById('inc_amt')?.value) || 0,
+                        day = parseInt(document.getElementById('inc_day')?.value) || 0;
+                    if (isEmptyOrZero(source) || isEmptyOrZero(amount) || isEmptyOrZero(day)) { showErr(
+                            'بيانات الدخل غير مكتملة!');
+                        return; }
                     obj = { source, amount, day };
                 } else if (type === 'savings') {
-                    let assetType = document.getElementById('sav_type')?.value || 'cash', goalName = document.getElementById('sav_nam')?.value?.trim() || '', currentAmount = parseFloat(document.getElementById('sav_cur')?.value) || 0;
-                    if (isEmptyOrZero(goalName)) { showErr('اسم الصندوق مطلوب!'); return; }
-                    obj = { assetType, goalName, currentAmount, targetAmount: parseFloat(document.getElementById('sav_tgt')?.value) || 0 };
+                    let assetType = document.getElementById('sav_type')?.value || 'cash',
+                        goalName = document.getElementById('sav_nam')?.value?.trim() || '',
+                        currentAmount = parseFloat(document.getElementById('sav_cur')?.value) || 0;
+                    if (isEmptyOrZero(goalName)) { showErr('اسم الصندوق أو الأصل مطلوب!');
+                        return; }
+                    obj = { assetType, goalName, currentAmount, targetAmount: parseFloat(document.getElementById(
+                            'sav_tgt')?.value) || 0 };
                     if (assetType === 'gold') {
                         obj.karat = parseInt(document.getElementById('sav_karat')?.value) || 24;
-                        obj.currentPricePerGram = parseFloat(document.getElementById('sav_price_gram')?.value) || 0;
+                        obj.currentPricePerGram = parseFloat(document.getElementById('sav_price_gram')
+                            ?.value) || 0;
                         obj.purchasePrice = parseFloat(document.getElementById('sav_purchase')?.value) || 0;
                         obj.purchaseDate = document.getElementById('sav_pdate')?.value || '';
                     } else if (assetType === 'silver') {
                         obj.silverPurity = document.getElementById('sav_purity')?.value || '999';
-                        obj.currentPricePerGram = parseFloat(document.getElementById('sav_price_gram')?.value) || 0;
+                        obj.currentPricePerGram = parseFloat(document.getElementById('sav_price_gram')
+                            ?.value) || 0;
                         obj.purchasePrice = parseFloat(document.getElementById('sav_purchase')?.value) || 0;
                         obj.purchaseDate = document.getElementById('sav_pdate')?.value || '';
+                    } else {
+                        obj.karat = null;
+                        obj.silverPurity = null;
+                        obj.currentPricePerGram = null;
+                        obj.purchasePrice = null;
+                        obj.purchaseDate = null;
                     }
                 } else if (type === 'scheduledDebt') {
-                    let description = document.getElementById('sd_desc')?.value?.trim() || '', amount = parseFloat(document.getElementById('sd_amt')?.value) || 0, dueDate = document.getElementById('sd_date')?.value || '', notes = document.getElementById('sd_notes')?.value?.trim() || '';
-                    if (isEmptyOrZero(description) || isEmptyOrZero(amount) || isEmptyOrZero(dueDate)) { showErr('بيانات الدين غير مكتملة!'); return; }
+                    let description = document.getElementById('sd_desc')?.value?.trim() || '',
+                        amount = parseFloat(document.getElementById('sd_amt')?.value) || 0,
+                        dueDate = document.getElementById('sd_date')?.value || '',
+                        notes = document.getElementById('sd_notes')?.value?.trim() || '';
+                    if (isEmptyOrZero(description) || isEmptyOrZero(amount) || isEmptyOrZero(dueDate)) { showErr(
+                            'بيانات الدين المجدول غير مكتملة!');
+                        return; }
                     obj = { description, amount, dueDate, notes };
                 }
-
-                // Get image data from preview (base64)
-                const previewImg = document.getElementById('formImagePreview');
-                if (previewImg && previewImg.style.display !== 'none' && previewImg.src && previewImg.src.startsWith('data:image')) {
-                    obj.imageData = previewImg.src;
-                } else {
-                    obj.imageData = null; // no image or removed
-                }
-
                 if (isEdit && idx !== null) {
-                    appData[type][idx] = obj;
+                    if (type === 'installment') appData.installments[idx] = obj;
+                    else if (type === 'recurring') appData.recurring[idx] = obj;
+                    else if (type === 'card') appData.cards[idx] = obj;
+                    else if (type === 'income') appData.income[idx] = obj;
+                    else if (type === 'savings') appData.savings[idx] = obj;
+                    else if (type === 'scheduledDebt') appData.scheduledDebts[idx] = obj;
                 } else {
-                    appData[type].push(obj);
+                    if (type === 'installment') appData.installments.push(obj);
+                    else if (type === 'recurring') appData.recurring.push(obj);
+                    else if (type === 'card') appData.cards.push(obj);
+                    else if (type === 'income') appData.income.push(obj);
+                    else if (type === 'savings') appData.savings.push(obj);
+                    else if (type === 'scheduledDebt') appData.scheduledDebts.push(obj);
                 }
-                saveAppDataToStorage().then(() => {
-                    renderAllModulesTables();
-                    calculateFinanceReport();
-                    calculateGlobalOverview();
-                    bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
-                }).catch(err => {
-                    console.error(err);
-                    alert('فشل في حفظ البيانات.');
-                });
-            } catch (e) {
-                console.error(e);
-                alert('حدث خطأ غير متوقع.');
-            } finally {
-                submitBtn.disabled = false;
-            }
+                saveAppDataToStorage();
+                renderAllModulesTables();
+                calculateFinanceReport();
+                calculateGlobalOverview();
+                bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
+            } catch (e) { console.error(e);
+                alert("حدث خطأ أثناء الحفظ."); }
         }
 
-        // ======================== MEMO FUNCTIONS ========================
-        async function saveMemoData() {
-            const memoText = document.getElementById('memoTextarea').value;
-            try {
-                await dbManager.saveMemo(memoText);
-                localStorage.setItem('egyup_memo_text', memoText);
-                document.getElementById('memoAlertText').textContent = '✅ تم حفظ الملاحظات!';
-                setTimeout(() => document.getElementById('memoAlertText').textContent = '', 2500);
-            } catch (e) {
-                localStorage.setItem('egyup_memo_text', memoText);
-                alert('تم الحفظ محلياً فقط.');
-            }
+        function saveMemoData() {
+            appData.memo = document.getElementById('memoTextarea').value;
+            saveAppDataToStorage();
+            document.getElementById('memoAlertText').textContent = '✅ تم حفظ الملاحظات!';
+            setTimeout(() => document.getElementById('memoAlertText').textContent = '', 2500);
         }
 
-        // ======================== EXPORT / IMPORT ========================
+        function loadMemoData() {
+            document.getElementById('memoTextarea').value = appData.memo || '';
+        }
+
         function exportDataJSON() {
-            const exportObject = { ...appData, memo: document.getElementById('memoTextarea').value };
-            const blob = new Blob([JSON.stringify(exportObject)], { type: 'application/json' });
-            const a = document.createElement('a');
+            let blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+            let a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `EgyUp_Backup_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
@@ -811,135 +1609,41 @@
         }
 
         function importDataJSON(event) {
-            const reader = new FileReader();
-            reader.onload = async function(e) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
                 try {
-                    const parsed = JSON.parse(e.target.result);
+                    let parsed = JSON.parse(e.target.result);
                     if (validateImportData(parsed)) {
-                        const memoText = parsed.memo || '';
-                        delete parsed.memo;
-                        appData = parsed;
-                        await saveAppDataToStorage();
-                        document.getElementById('memoTextarea').value = memoText;
-                        try { await dbManager.saveMemo(memoText); } catch (ex) {}
+                        // الاحتفاظ بالمذكرة من الملف المستورد إذا كانت موجودة
+                        if (typeof parsed.memo === 'string') {
+                            appData = parsed;
+                        } else {
+                            // إذا لم تكن المذكرة موجودة في الملف، نحافظ على المذكرة الحالية
+                            let currentMemo = appData.memo || '';
+                            appData = parsed;
+                            appData.memo = currentMemo;
+                        }
+                        saveAppDataToStorage();
                         renderAllModulesTables();
                         calculateFinanceReport();
                         calculateGlobalOverview();
-                        alert("✅ تم استيراد البيانات والصور بنجاح!");
-                    } else { alert("⚠️ الملف غير متوافق."); }
-                } catch (err) { alert("الملف غير صالح."); }
+                        loadMemoData();
+                        alert("✅ تم استيراد البيانات بنجاح!");
+                    } else { alert("⚠️ الملف غير متوافق أو تالف."); }
+                } catch (err) { alert("الملف غير صالح للاستيراد."); }
             };
             reader.readAsText(event.target.files[0]);
         }
 
-        // ======================== INITIALIZATION ========================
         document.addEventListener('DOMContentLoaded', () => {
             startClock();
             initSecurityGate();
-            const savedTheme = localStorage.getItem('egyup_theme_choice') || 'light';
+            let savedTheme = localStorage.getItem('egyup_theme_choice') || 'light';
             document.documentElement.setAttribute('data-bs-theme', savedTheme);
-            document.getElementById('darkModeBtn').innerHTML = savedTheme === 'dark' ? '<i class="bi bi-sun-fill text-warning"></i>' : '<i class="bi bi-moon-fill"></i>';
+            document.getElementById('darkModeBtn').innerHTML = savedTheme === 'dark' ?
+                '<i class="bi bi-sun-fill text-warning"></i>' : '<i class="bi bi-moon-fill"></i>';
             lastExportTime = parseInt(localStorage.getItem('egyup_last_export_time')) || null;
-            dbManager.openDB().catch(console.error);
         });
-
-        // Include the missing showAutoAlerts and other functions fully in the actual code
-        function showAutoAlerts() {
-            let now = new Date(); let todayDay = now.getDate(); let html = ''; let has = false;
-            appData.installments.forEach(item => {
-                let total = parseInt(item.totalCount) || 0; let paid = parseInt(item.paidCount) || 0; let monthly = parseFloat(item.monthlyAmount) || 0;
-                for (let i = paid; i < total; i++) {
-                    let due = new Date(addMonthsToDateStr(item.startDate, i)); let days = calculateDaysLeft(due);
-                    if (days >= 0 && days <= 3) { has = true; html += `<div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle-fill"></i> قسط <b>${item.entity}</b> بقيمة <b>${monthly.toLocaleString()} ج</b> ${days === 0 ? 'اليوم' : 'خلال ' + days + ' أيام'} (${convertToLocalDate(due)})</div>`; }
-                }
-            });
-            appData.cards.forEach(item => {
-                let due = calculateCreditCardDueDate(item.purchaseDate); let days = calculateDaysLeft(due);
-                if (days >= 0 && days <= 5) { has = true; html += `<div class="alert alert-danger py-2"><i class="bi bi-credit-card-fill"></i> كارت <b>${item.bank} - ${item.cardName}</b> بقيمة <b>${parseFloat(item.requiredAmount).toLocaleString()} ج</b> ${days === 0 ? 'اليوم' : 'خلال ' + days + ' أيام'} (${convertToLocalDate(due)})</div>`; }
-            });
-            appData.recurring.forEach(item => { if (parseInt(item.day) === todayDay) { has = true; html += `<div class="alert alert-info py-2"><i class="bi bi-receipt"></i> اليوم موعد سداد <b>${item.category}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ج</b></div>`; } });
-            appData.scheduledDebts.forEach(item => { let due = new Date(item.dueDate); let days = calculateDaysLeft(due); if (days >= 0 && days <= 3) { has = true; html += `<div class="alert alert-dark py-2"><i class="bi bi-calendar-x"></i> دين مجدول <b>${item.description}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ج</b> ${days === 0 ? 'اليوم' : 'خلال ' + days + ' أيام'} (${convertToLocalDate(due)})</div>`; } });
-            if (has) { document.getElementById('alertsModalBody').innerHTML = html; new bootstrap.Modal(document.getElementById('alertsModal')).show(); }
-        }
-
-        function startBackupReminder() {
-            if (backupReminderInterval) clearInterval(backupReminderInterval);
-            backupReminderInterval = setInterval(() => { if (lastExportTime && Math.floor((Date.now() - lastExportTime) / 60000) >= 30) { if (confirm("⏰ مرت 30 دقيقة منذ آخر نسخة. هل تريد تصدير بياناتك الآن؟")) exportDataJSON(); } }, 60000);
-        }
-
-        function changeDashboardView(view) { activeView = view; document.getElementById('btnMonthly').classList.toggle('active', view === 'monthly'); document.getElementById('btnYearly').classList.toggle('active', view === 'yearly'); document.getElementById('monthSelector').style.display = view === 'monthly' ? 'flex' : 'none'; destroyAllCharts(); calculateFinanceReport(); }
-
-        function getDueStatus(dueDate) { let today = new Date(); today.setHours(0,0,0,0); let due = new Date(dueDate); due.setHours(0,0,0,0); let diff = calculateDaysLeft(due); if (diff < 0) return {text: 'متأخر', class: 'danger'}; if (diff === 0) return {text: 'اليوم', class: 'warning'}; if (diff <= 3) return {text: `خلال ${diff} أيام`, class: 'warning'}; return {text: 'قادم', class: 'info'}; }
-
-        function calculateFinanceReport() {
-            let selMonth = parseInt(document.getElementById('filterMonth').value); let selYear = parseInt(document.getElementById('filterYear').value);
-            let totalIn = 0, totalOutInstallments = 0, totalOutRecurring = 0, totalOutCards = 0, totalOutScheduled = 0;
-            let tableBody = document.querySelector('#dueTable tbody'); tableBody.innerHTML = '';
-            let alertBox = document.getElementById('todayAlertBox'); alertBox.innerHTML = '';
-            let todayDay = new Date().getDate();
-            if (activeView === 'monthly') {
-                appData.income.forEach(item => totalIn += parseFloat(item.amount) || 0);
-                appData.installments.forEach(item => { let total = parseInt(item.totalCount) || 0; let monthly = parseFloat(item.monthlyAmount) || 0; for (let i = 0; i < total; i++) { let due = new Date(addMonthsToDateStr(item.startDate, i)); if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) { totalOutInstallments += monthly; let status = getDueStatus(due); tableBody.innerHTML += `<tr><td><span class="badge bg-danger">قسط شهري</span></td><td><b>${item.entity}</b> (القسط رقم ${i+1} من ${total})</td><td>${convertToLocalDate(due)}</td><td>${monthly.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`; } } });
-                appData.recurring.forEach(item => { let amt = parseFloat(item.amount) || 0; let due = getNextDateForSpecificDay(item.day); if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) { totalOutRecurring += amt; let status = getDueStatus(due); tableBody.innerHTML += `<tr><td><span class="badge bg-info">مصروف ثابت</span></td><td>${item.category}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`; } if (parseInt(item.day) === todayDay) alertBox.innerHTML += `<div class="today-alert" style="border-right:4px solid var(--warning);background:var(--warning-soft);padding:14px 18px;border-radius:var(--radius-md);margin-bottom:16px;">🔔 <b>استحقاق اليوم:</b> سداد بند المصروفات الدوري (<b>${item.category}</b>) بقيمة <b>${amt.toLocaleString()} ج</b>.</div>`; });
-                appData.cards.forEach(item => { let amt = parseFloat(item.requiredAmount) || 0; let due = calculateCreditCardDueDate(item.purchaseDate); if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) { totalOutCards += amt; let status = getDueStatus(due); tableBody.innerHTML += `<tr><td><span class="badge bg-warning text-dark">كارت ائتمان</span></td><td>مديونية بنك ${item.bank} - كارت ${item.cardName}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`; } });
-                appData.scheduledDebts.forEach(item => { let amt = parseFloat(item.amount) || 0; let due = new Date(item.dueDate); if (due.getMonth() + 1 === selMonth && due.getFullYear() === selYear) { totalOutScheduled += amt; let status = getDueStatus(due); tableBody.innerHTML += `<tr><td><span class="badge bg-dark">دين مجدول</span></td><td>${item.description}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`; } });
-            } else {
-                appData.income.forEach(item => totalIn += (parseFloat(item.amount) || 0) * 12);
-                appData.recurring.forEach(item => totalOutRecurring += (parseFloat(item.amount) || 0) * 12);
-                appData.installments.forEach(item => { let total = parseInt(item.totalCount) || 0; let monthly = parseFloat(item.monthlyAmount) || 0; for (let i = 0; i < total; i++) { let due = new Date(addMonthsToDateStr(item.startDate, i)); if (due.getFullYear() === selYear) totalOutInstallments += monthly; } });
-                appData.cards.forEach(item => { let amt = parseFloat(item.requiredAmount) || 0; let due = calculateCreditCardDueDate(item.purchaseDate); if (due.getFullYear() === selYear) totalOutCards += amt; });
-                appData.scheduledDebts.forEach(item => { let amt = parseFloat(item.amount) || 0; let due = new Date(item.dueDate); if (due.getFullYear() === selYear) totalOutScheduled += amt; });
-            }
-            let totalOutAll = totalOutInstallments + totalOutRecurring + totalOutCards + totalOutScheduled; let netSavings = totalIn - totalOutAll;
-            document.getElementById('statsContainer').innerHTML = `
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-success"><h6 style="color:var(--success);">💰 الدخل الإجمالي</h6><h4 class="fw-bold" style="color:var(--success);">${totalIn.toLocaleString()} ج</h4></div></div>
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-danger"><h6 style="color:var(--danger);">💳 الأقساط المطلوب</h6><h4 class="fw-bold" style="color:var(--danger);">${totalOutInstallments.toLocaleString()} ج</h4></div></div>
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-warning"><h6 style="color:#e0a800;">💳 مديونية الكروت</h6><h4 class="fw-bold" style="color:#e0a800;">${totalOutCards.toLocaleString()} ج</h4></div></div>
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-info"><h6 style="color:var(--info);">🧾 فئات المصروفات</h6><h4 class="fw-bold" style="color:var(--info);">${totalOutRecurring.toLocaleString()} ج</h4></div></div>
-            <div class="col-12"><div class="glass-card text-center ${netSavings>=0?'border-primary':'border-dark'}"><h5>💵 صافي السيولة الفائضة أو العجز المتوقع بالفترة</h5><h3 class="fw-bold" style="color:${netSavings>=0?'var(--accent)':'var(--danger)'};">${netSavings.toLocaleString()} ج</h3>${netSavings>0?`<button class="btn btn-sm btn-success mt-2" onclick="quickSaveSurplus(${netSavings})"><i class="bi bi-safe2"></i> إيداع الفائض في الادخار</button>`:''}</div></div>`;
-            if (tableBody.innerHTML === '') tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">لا توجد أي التزامات مالية أو أقساط مستحقة خلال الفترة المحددة.</td></tr>`;
-            buildChartsLive(totalIn, totalOutAll, totalOutInstallments, totalOutRecurring, totalOutCards + totalOutScheduled);
-            buildNetWorthChart(); showRandomTip();
-        }
-
-        function quickSaveSurplus(amount) { if (confirm(`هل تريد إضافة الفائض ${amount.toLocaleString()} ج إلى صندوق ادخار جديد أو موجود؟`)) showFormModal('savings'); }
-
-        function calculateGlobalOverview() {
-            let grandTotalDebtOriginal = 0, grandTotalDebtRemaining = 0, grandTotalCardsDebt = 0, grandTotalAssets = 0, grandTotalScheduled = 0;
-            appData.installments.forEach(item => { let ta = parseFloat(item.totalAmount) || 0; let mo = parseFloat(item.monthlyAmount) || 0; let pa = parseInt(item.paidCount) || 0; grandTotalDebtOriginal += ta; grandTotalDebtRemaining += Math.max(0, ta - (mo * pa)); });
-            appData.cards.forEach(item => grandTotalCardsDebt += parseFloat(item.requiredAmount) || 0);
-            appData.scheduledDebts.forEach(item => grandTotalScheduled += parseFloat(item.amount) || 0);
-            let totalWhatYouOwe = grandTotalDebtRemaining + grandTotalCardsDebt + grandTotalScheduled;
-            appData.savings.forEach(item => grandTotalAssets += getAssetFinancialValue(item));
-            let netWorth = grandTotalAssets - totalWhatYouOwe;
-            let totalDebtPaidSoFar = grandTotalDebtOriginal - grandTotalDebtRemaining;
-            let debtProgressPercent = grandTotalDebtOriginal > 0 ? Math.round((totalDebtPaidSoFar / grandTotalDebtOriginal) * 100) : 100;
-            document.getElementById('globalOverviewCards').innerHTML = `
-            <div class="col-md-4"><div class="glass-card text-center border-success h-100"><h5 style="color:var(--success);">💰 إجمالي الأصول والمدخرات (اللى ليك)</h5><h3 class="fw-bold mt-2" style="color:var(--success);">${grandTotalAssets.toLocaleString()} ج</h3><p class="small text-muted mb-0">قيمة الصناديق، الكاش والأصول العينية (الذهب والفضة بسعر السوق الحالي)</p></div></div>
-            <div class="col-md-4"><div class="glass-card text-center border-danger h-100"><h5 style="color:var(--danger);">💸 الالتزامات والمديونيات الكلية (اللى عليك)</h5><h3 class="fw-bold mt-2" style="color:var(--danger);">${totalWhatYouOwe.toLocaleString()} ج</h3><p class="small text-muted mb-0">متبقي الأقساط (${grandTotalDebtRemaining.toLocaleString()} ج) + الكروت (${grandTotalCardsDebt.toLocaleString()} ج) + المجدولة (${grandTotalScheduled.toLocaleString()} ج)</p></div></div>
-            <div class="col-md-4"><div class="glass-card text-center ${netWorth>=0?'border-primary':'border-dark'} h-100"><h5>⚖️ الوضع المالي الصافي الحالي</h5><h2 class="fw-bold mt-2" style="color:${netWorth>=0?'var(--accent)':'var(--danger)'};">${netWorth.toLocaleString()} ج</h2><p class="small text-muted mb-0">${netWorth>=0?'✅ موقفك المالي ممتاز (فائض أصولك يغطي ديونك)':'⚠️ عجز مالي مؤقت (مجموع الالتزامات الكلية أكبر من الكاش والأصول الحالية)'}</p></div></div>`;
-            document.getElementById('globalDebtProgressBar').innerHTML = `<div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width:${debtProgressPercent}%;border-radius:20px;">${debtProgressPercent}%</div>`;
-            document.getElementById('globalDebtProgressText').innerHTML = `لقد قمت بسداد سلفيات وأقساط بقيمة <b class="text-success">${totalDebtPaidSoFar.toLocaleString()} ج</b> من أصل مديونيات مسجلة كلياً بقيمة <b>${grandTotalDebtOriginal.toLocaleString()} ج</b>. المتبقي للجهات: <b class="text-danger">${grandTotalDebtRemaining.toLocaleString()} ج</b>`;
-            updateNetWorthHistory();
-        }
-
-        function updateNetWorthHistory() {
-            let netWorth = 0; appData.savings.forEach(item => netWorth += getAssetFinancialValue(item));
-            let totalDebt = 0; appData.installments.forEach(item => { let ta = parseFloat(item.totalAmount) || 0; let mo = parseFloat(item.monthlyAmount) || 0; let pa = parseInt(item.paidCount) || 0; totalDebt += Math.max(0, ta - (mo * pa)); });
-            appData.cards.forEach(item => totalDebt += parseFloat(item.requiredAmount) || 0);
-            appData.scheduledDebts.forEach(item => totalDebt += parseFloat(item.amount) || 0);
-            let currentNet = netWorth - totalDebt;
-            let history = JSON.parse(localStorage.getItem('egyup_networth_history') || '[]');
-            let now = new Date(); let monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            let existing = history.find(h => h.month === monthKey);
-            if (existing) existing.value = currentNet; else { history.push({ month: monthKey, value: currentNet }); if (history.length > 12) history.shift(); }
-            localStorage.setItem('egyup_networth_history', JSON.stringify(history));
-            buildNetWorthChart();
-        }
-
-        function buildNetWorthChart() { /* unchanged */ }
-        function buildChartsLive(income, outAll, inst, rec, crd) { /* unchanged */ }
-
     </script>
 </body>
 </html>
