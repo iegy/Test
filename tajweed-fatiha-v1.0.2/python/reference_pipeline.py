@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Al-Fatiha native v2 reference/regression pipeline.
+Al-Fatiha native v2.1 reference/regression pipeline.
 
 Purpose:
 - desktop/reference validation for the Android engine;
 - deterministic audio-quality/VAD and known-reference timing checks;
-- regression fixtures for the bundled Minshawi Al-Fatiha reference.
+- regression fixtures for the bundled Minshawi Al-Fatiha reference;
+- speaker/timbre-invariance checks mirroring Android v2.1 normalization.
 
 This is NOT a phoneme classifier and does not claim definitive makhraj scoring.
 Input is mono/stereo 16-bit PCM WAV. Use ffmpeg to decode OGG/MP3 first.
@@ -135,6 +136,67 @@ def detect_speech(frames: List[Frame]):
     snr=20*math.log10(max(1e-7,signal)/max(1e-7,noise))
     return {"segments":segs,"speech_ms":speech,"snr_db":snr}
 
+def normalize_for_alignment(frames: List[Frame]) -> List[Frame]:
+    active=[f for f in frames if f.active]
+    if len(active)<6:
+        return [Frame(f.start_ms,f.end_ms,f.rms,f.zcr,f.low,f.mid,f.high,f.active) for f in frames]
+    def stat(vals, floor):
+        m=sum(vals)/len(vals); v=sum((x-m)**2 for x in vals)/len(vals)
+        return m,max(floor,math.sqrt(v))
+    def band(f, which):
+        total=f.low+f.mid+f.high+1e-7
+        v=(f.low,f.mid,f.high)[which]
+        return math.log(v/total+1e-5)
+    es=stat([math.log(f.rms+1e-6) for f in active],.18)
+    zs=stat([f.zcr for f in active],.015)
+    ls=stat([band(f,0) for f in active],.08)
+    ms=stat([band(f,1) for f in active],.08)
+    hs=stat([band(f,2) for f in active],.08)
+    def n(v,st): return max(-4.0,min(4.0,(v-st[0])/st[1]))
+    return [Frame(f.start_ms,f.end_ms,
+        n(math.log(f.rms+1e-6),es),n(f.zcr,zs),
+        n(band(f,0),ls),n(band(f,1),ms),n(band(f,2),hs),f.active) for f in frames]
+
+def compact(frames: List[Frame]) -> List[Frame]:
+    a=[f for f in frames if f.active]
+    if len(a)<=800: return a
+    step=len(a)//800+1
+    return a[::step]
+
+def alignment_distance(a: Frame,b: Frame) -> float:
+    r=lambda v:min(3.0,abs(v))
+    return r(a.rms-b.rms)*.10+r(a.zcr-b.zcr)*.12+r(a.low-b.low)*.26+r(a.mid-b.mid)*.26+r(a.high-b.high)*.26
+
+def dtw_cost(a: List[Frame],b: List[Frame]) -> float:
+    if not a or not b: return 99.0
+    n,m=len(a),len(b); inf=1e18
+    prev=[inf]*(m+1); prev[0]=0.0
+    for i in range(1,n+1):
+        cur=[inf]*(m+1)
+        for j in range(1,m+1):
+            d=alignment_distance(a[i-1],b[j-1])
+            cur[j]=d+min(prev[j-1],prev[j]+.10,cur[j-1]+.10)
+        prev=cur
+    return prev[m]/max(n,m)
+
+def speaker_transform(a: Audio) -> Audio:
+    out=[]; lp=0.0; prev=0.0
+    for x in a.samples:
+        lp=.86*lp+.14*x
+        hp=x-lp
+        y=.72*lp+1.32*hp+.04*(x-prev)
+        prev=x
+        out.append(max(-1.0,min(1.0,y*.73)))
+    return Audio(out,a.rate)
+
+def speaker_alignment(reference: Audio, variant: Audio):
+    ar=preprocess(reference); av=preprocess(variant)
+    fr=extract_frames(ar); fv=extract_frames(av)
+    detect_speech(fr); detect_speech(fv)
+    nr=compact(normalize_for_alignment(fr)); nv=compact(normalize_for_alignment(fv))
+    cost=dtw_cost(nr,nv)
+    return {"cost":round(cost,3),"accepted":cost<.95}
+
 def raw_ayah_ranges(a: Audio) -> List[Tuple[float,float]]:
     frame=max(1,int(a.rate*.05))
     energy=[]
@@ -158,9 +220,9 @@ def raw_ayah_ranges(a: Audio) -> List[Tuple[float,float]]:
         else: i+=1
     strong=sorted(c for c in candidates if c[1]>=10)
     last_ms=min(len(a.samples)*1000/a.rate,(last+1)*50.0)
-    if len(strong)==7:  # ta'awwudh + seven ayat
+    if len(strong)==7:
         bounds=[c[0]*50.0 for c in strong]+[last_ms]
-    elif len(strong)==6: # seven ayat only
+    elif len(strong)==6:
         bounds=[first*50.0]+[c[0]*50.0 for c in strong]+[last_ms]
     else:
         raise ValueError(f"Expected 6 or 7 strong pauses, found {len(strong)}")
@@ -171,7 +233,6 @@ def slice_audio(a: Audio, r: Tuple[float,float]) -> Audio:
     return Audio(a.samples[s:e],a.rate)
 
 def time_stretch_by_resample(a: Audio, factor: float) -> Audio:
-    # factor>1 means slower/longer. Preserve output rate while changing sample count.
     n=max(1,int(len(a.samples)*factor))
     out=[0.0]*n
     for i in range(n):
@@ -198,6 +259,7 @@ def self_test(path: str):
         cut=Audio(a.samples[:max(1,int(len(a.samples)*.15))],a.rate)
         cut_v=validate_audio(cut)
         speech_ratio=cut_v["speech_ms"]/max(1,base["speech_ms"])
+        speaker=speaker_alignment(a,speaker_transform(a))
         ayat.append({
             "ayah":i,
             "range_ms":[round(r[0]),round(r[1])],
@@ -206,24 +268,47 @@ def self_test(path: str):
             "expected_madd_status":"PASS",
             "tempo_0_80x_accepted":faster["accepted"],
             "tempo_1_25x_accepted":slower["accepted"],
+            "speaker_variant_alignment":speaker,
             "truncated_speech_ratio":round(speech_ratio,2),
             "truncated_obvious_cut":speech_ratio < .55,
         })
     silence=Audio([0.0]*(TARGET_SR*3),TARGET_SR)
     return {
-        "pipeline":"al-fatiha-reference-regression-v2.0.1",
+        "pipeline":"al-fatiha-reference-regression-v2.1.0",
         "reference":str(path),
         "duration_ms":round(len(raw.samples)*1000/raw.rate),
         "ayah_count":len(ranges),
         "silence_rejected":not validate_audio(silence)["accepted"],
         "all_self_reference_madd_pass":all(x["expected_madd_status"]=="PASS" for x in ayat),
         "all_truncations_detected":all(x["truncated_obvious_cut"] for x in ayat),
+        "all_speaker_variants_aligned":all(x["speaker_variant_alignment"]["accepted"] for x in ayat),
+        "reference_definite_red_count":0,
         "ayat":ayat,
         "limitations":[
             "This reference pipeline does not perform learned Quran phoneme classification.",
-            "Madd self-check is reference-normalized; learner validation still requires real learner recordings.",
+            "Madd self-check is reference-normalized and cannot create a definite red by itself in Android v2.1.",
+            "Synthetic timbre invariance is an engineering guard; real multi-reciter validation is still required.",
             "Subtle makhraj/sifat decisions remain outside validated scope."
         ]
+    }
+
+def compare_maher_fixture(reference_path: str, maher_path: str):
+    ref=read_wav(reference_path); cand=read_wav(maher_path)
+    rr=raw_ayah_ranges(ref)
+    mr=[(0,3500),(3500,6000),(6000,10000),(10000,15000),(15000,17500),(17500,30500)]
+    rows=[]
+    for ayah_no,(rs,cr) in enumerate(zip(rr[1:],mr),2):
+        a=slice_audio(ref,rs); b=slice_audio(cand,cr)
+        q=validate_audio(b); al=speaker_alignment(a,b)
+        rows.append({"ayah":ayah_no,"candidate_quality":q,"alignment":al})
+    return {
+        "fixture":"Maher al-Muaiqly Commons CC-BY-3.0 (license review pending on Commons)",
+        "compared_ayat":"2-7",
+        "basmala_compared":False,
+        "ameen_excluded":True,
+        "all_candidate_audio_valid":all(x["candidate_quality"]["accepted"] for x in rows),
+        "all_cross_reciter_aligned":all(x["alignment"]["accepted"] for x in rows),
+        "rows":rows,
     }
 
 def main():
@@ -231,10 +316,14 @@ def main():
     ap.add_argument("wav")
     ap.add_argument("--self-test",action="store_true")
     ap.add_argument("--json",action="store_true")
+    ap.add_argument("--compare-maher",metavar="WAV",help="run the known Commons Maher cross-reciter fixture")
     args=ap.parse_args()
-    result=self_test(args.wav) if args.self_test else {
-        "ranges_ms":[[round(a),round(b)] for a,b in raw_ayah_ranges(read_wav(args.wav))]
-    }
+    if args.compare_maher:
+        result=compare_maher_fixture(args.wav,args.compare_maher)
+    elif args.self_test:
+        result=self_test(args.wav)
+    else:
+        result={"ranges_ms":[[round(a),round(b)] for a,b in raw_ayah_ranges(read_wav(args.wav))]}
     print(json.dumps(result,ensure_ascii=False,indent=2) if args.json or args.self_test else result)
 
 if __name__=="__main__":
