@@ -7,7 +7,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 object SignalEngine {
-    const val MODEL_VERSION = "native-known-text-align-v2.0.0"
+    const val MODEL_VERSION = "native-known-text-align-v2.0.1"
 
     fun makeReference(input: PcmAudio, source: String): ReferenceData {
         val audio = preprocessAudio(input)
@@ -54,7 +54,9 @@ object SignalEngine {
         for (i in 1..obsBounds.lastIndex) obsBounds[i] = max(obsBounds[i], obsBounds[i - 1] + 10.0)
 
         val localHarakah = estimateHarakah(frames, obsStart, obsEnd)
+        val referenceHarakah = estimateHarakah(reference.frames, refStart, refEnd)
         val harakahMs = (145.0 * .45 + localHarakah.first * .55).coerceIn(85.0, 250.0)
+        val referenceHarakahMs = (145.0 * .45 + referenceHarakah.first * .55).coerceIn(85.0, 250.0)
         val tempoRatio = ((obsEnd - obsStart) / max(1.0, refEnd - refStart)).coerceIn(.25, 4.0)
         val maddByWord = ayah.madd.groupBy { it.wordIndex }
 
@@ -75,18 +77,29 @@ object SignalEngine {
             val phones = ayah.phonemes.getOrElse(index) { emptyList() }
             val phoneInfo = phoneDiagnostics(phones, reference.frames, frames, refBounds[index], refBounds[index + 1], start, end, wordConfidence)
             val madd = maddByWord[index].orEmpty().map { event ->
-                val pb = proportionalBounds(phones.map { if (it.contains('ː')) 2.2 else 1.0 }, start, end)
-                val pi = event.phonemeIndex.coerceIn(0, max(0, phones.lastIndex)); val observed = max(1.0, pb.getOrElse(pi + 1) { end } - pb.getOrElse(pi) { start })
-                val ratio = observed / harakahMs; val conf = (wordConfidence * localHarakah.second).coerceIn(0.0, 1.0)
-                val lo = if (event.targetHarakat >= 6) 4.0 else 1.2; val hi = if (event.targetHarakat >= 6) 8.0 else 3.6
-                val ms = when { conf < .34 -> Status.UNDECIDABLE; ratio < lo * .65 || ratio > hi * 1.42 -> Status.FAIL; ratio < lo || ratio > hi -> Status.REVIEW; else -> Status.PASS }
-                val explanation = when (ms) {
-                    Status.PASS -> "مدة المد داخل النطاق المتوقع بعد مراعاة سرعة قراءتك."
-                    Status.REVIEW -> "مدة المد قريبة من الحد وتحتاج مراجعة."
-                    Status.FAIL -> if (ratio < lo) "المد أقصر بوضوح من المتوقع." else "المد أطول بوضوح من المتوقع."
-                    Status.UNDECIDABLE -> "الثقة في قياس المد منخفضة؛ أعد القراءة في مكان أهدأ."
+                val weights = phones.map { if (it.contains('ː')) 2.2 else 1.0 }
+                val pb = proportionalBounds(weights, start, end)
+                val refPb = proportionalBounds(weights, refBounds[index], refBounds[index + 1])
+                val pi = event.phonemeIndex.coerceIn(0, max(0, phones.lastIndex))
+                val observed = max(1.0, pb.getOrElse(pi + 1) { end } - pb.getOrElse(pi) { start })
+                val referenceObserved = max(1.0, refPb.getOrElse(pi + 1) { refBounds[index + 1] } - refPb.getOrElse(pi) { refBounds[index] })
+                val normalizedToReference = (observed / harakahMs) / max(.05, referenceObserved / referenceHarakahMs)
+                val estimatedHarakat = normalizedToReference * event.targetHarakat
+                val rhythmEvidence = min(localHarakah.second, referenceHarakah.second)
+                val conf = (wordConfidence * (.68 + .32 * rhythmEvidence)).coerceIn(0.0, 1.0)
+                val ms = when {
+                    conf < .38 -> Status.UNDECIDABLE
+                    normalizedToReference < .48 || normalizedToReference > 1.90 -> Status.FAIL
+                    normalizedToReference < .72 || normalizedToReference > 1.42 -> Status.REVIEW
+                    else -> Status.PASS
                 }
-                MaddAssessment(event.id, event.nameAr, event.targetHarakat, round2(ratio), observed.toLong(), harakahMs.toLong(), ms, round2(conf), explanation)
+                val explanation = when (ms) {
+                    Status.PASS -> "مدة المد متوافقة مع المرجع الصحيح بعد ضبط سرعة قراءتك."
+                    Status.REVIEW -> if (normalizedToReference < 1.0) "المد أقصر نسبيًا من المرجع ويحتاج مراجعة." else "المد أطول نسبيًا من المرجع ويحتاج مراجعة."
+                    Status.FAIL -> if (normalizedToReference < 1.0) "المد أقصر بوضوح من المرجع بعد ضبط السرعة." else "المد أطول بوضوح من المرجع بعد ضبط السرعة."
+                    Status.UNDECIDABLE -> "الثقة في قياس المد منخفضة؛ لن أحكم على هذا الموضع."
+                }
+                MaddAssessment(event.id, event.nameAr, event.targetHarakat, round2(estimatedHarakat), observed.toLong(), harakahMs.toLong(), ms, round2(conf), explanation)
             }
             if (madd.any { it.status == Status.FAIL } && wordConfidence >= .42) { status = Status.FAIL; reason = madd.first { it.status == Status.FAIL }.explanation }
             else if (status == Status.PASS && madd.any { it.status == Status.REVIEW }) { status = Status.REVIEW; reason = madd.first { it.status == Status.REVIEW }.explanation }
