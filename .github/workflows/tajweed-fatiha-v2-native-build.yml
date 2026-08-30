@@ -73,8 +73,15 @@ jobs:
             -i dist/minshawi_ikhlas.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/minshawi_ikhlas_16k.wav
           python3 python/content_gate_v22.py \
             dist/minshawi_reference_16k.wav dist/minshawi_ikhlas_16k.wav \
-            --expect reject > dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json
+            > dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json
           cat dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json').read_text(encoding='utf-8'))
+          assert r['accepted'] is False, r
+          print('V2_2_IKHLAS_REJECTION_GATE_PASS')
+          PY
           rm -f dist/minshawi_ikhlas.ogg dist/minshawi_ikhlas_16k.wav
 
       - name: Cross-reciter regression — Maher Al-Muaiqly ayat 2-7
