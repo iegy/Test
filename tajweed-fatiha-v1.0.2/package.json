@@ -1,8 +1,0 @@
-{
-  "name": "quran-tajweed-prototype-tests",
-  "private": true,
-  "version": "1.0.0",
-  "scripts": {
-    "test": "node tests/core.test.js"
-  }
-}
