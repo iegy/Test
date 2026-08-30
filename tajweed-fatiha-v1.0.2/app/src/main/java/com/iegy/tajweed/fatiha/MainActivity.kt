@@ -37,6 +37,7 @@ class MainActivity : Activity() {
     private val player = PcmPlayer()
     private lateinit var refs: ReferenceRepository
     private lateinit var store: AttemptStore
+    private lateinit var contentGate: ContentIdentityGate
 
     private var selectedAyah = 1
     private var learnerAudio: PcmAudio? = null
@@ -74,6 +75,7 @@ class MainActivity : Activity() {
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_RTL
         refs = ReferenceRepository(this)
         store = AttemptStore(this)
+        contentGate = ContentIdentityGate(this)
         setContentView(buildUi())
         renderAyah()
         renderHistory()
@@ -84,6 +86,7 @@ class MainActivity : Activity() {
         ui.removeCallbacksAndMessages(null)
         recorder?.stop()
         player.stop()
+        if (::contentGate.isInitialized) contentGate.close()
         bg.shutdownNow()
         super.onDestroy()
     }
@@ -180,7 +183,7 @@ class MainActivity : Activity() {
         historyCard.addView(historyText, full())
 
         val note = card(root, "مهم")
-        note.addView(text("إذا كانت الثقة منخفضة يعرض التطبيق «غير محسوم» بدل اختراع خطأ. الفونيمات المعروضة هي النطق المتوقع نظريًا، ولا تُعد حكمًا قطعيًا على دقائق المخارج والصفات.", 12f), full())
+        note.addView(text("إذا كانت الثقة منخفضة يعرض التطبيق «غير محسوم» بدل اختراع خطأ. عند اختيار «السورة كاملة» يتحقق نموذج قرآني محلي أولًا أن المسموع يطابق الفاتحة قبل إظهار أي حكم على الكلمات. الفونيمات المعروضة هي النطق المتوقع نظريًا، ولا تُعد حكمًا قطعيًا على دقائق المخارج والصفات.", 12f), full())
         return scroll
     }
 
@@ -305,9 +308,22 @@ class MainActivity : Activity() {
     private fun analyze() {
         val audio = learnerAudio ?: return
         analyzeBtn.isEnabled = false
-        statusText.text = "جارٍ التحليل المحلي…"
         val ayah = FatihaContent.byNumber(selectedAyah)
+        statusText.text = if (selectedAyah == 0) "جارٍ التحقق محليًا من نص الفاتحة…" else "جارٍ التحليل المحلي…"
         bg.execute {
+            if (selectedAyah == 0) {
+                val gate = contentGate.verifyWholeFatiha(audio, ayah.text)
+                if (gate.decision != ContentIdentityGate.Decision.ACCEPT) {
+                    ui.post {
+                        analyzeBtn.isEnabled = true
+                        renderContentGateResult(gate)
+                        statusText.text = gate.message
+                    }
+                    return@execute
+                }
+                ui.post { statusText.text = "تم التحقق من نص الفاتحة. جارٍ تحليل الآيات والكلمات…" }
+            }
+
             val r = runCatching { SignalEngine.analyze(audio, ayah, refs.getReference(selectedAyah)) }
             ui.post {
                 analyzeBtn.isEnabled = true
@@ -317,6 +333,21 @@ class MainActivity : Activity() {
                     statusText.text = if (it.accepted) "اكتمل التحليل." else (it.message ?: "تعذر التقييم بثقة.")
                 }.onFailure { statusText.text = "تعذر التحليل: ${it.message}" }
             }
+        }
+    }
+
+    private fun renderContentGateResult(g: ContentIdentityGate.Result) {
+        resultBox.removeAllViews()
+        resultBox.addView(text("⚪ لم يتم التحقق من محتوى الفاتحة", 18f, true).apply {
+            gravity = Gravity.CENTER
+            setTextColor(statusColor(Status.UNDECIDABLE))
+        })
+        resultBox.addView(statusTextView(Status.UNDECIDABLE, g.message))
+        resultBox.addView(text("لم تُشغّل أحكام التجويد أو ألوان الكلمات لأن التحقق من النص يسبقها في v2.2.0.", 12f))
+        debugText.text = buildString {
+            appendLine("contentModel=${ContentIdentityGate.MODEL_VERSION} decision=${g.decision}")
+            appendLine("duration=${g.durationMs} frames=${g.frames} processing=${g.processingMs}ms")
+            appendLine("ctc_nll_per_frame=${g.nllPerFrame} viterbi_gap_per_frame=${g.viterbiGapPerFrame}")
         }
     }
 
