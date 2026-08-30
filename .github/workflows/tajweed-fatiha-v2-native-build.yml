@@ -40,7 +40,7 @@ jobs:
             -i app/src/main/assets/fatiha-reference-cc0.ogg \
             -ar 16000 -ac 1 -c:a pcm_s16le dist/minshawi_reference_16k.wav
 
-      - name: Run v2.1 safety regressions
+      - name: Run v2.2 base safety regressions
         working-directory: tajweed-fatiha-v1.0.2
         run: |
           python3 python/reference_pipeline.py dist/minshawi_reference_16k.wav --self-test --json > dist/V2_2_BASE_REGRESSION.json
@@ -55,34 +55,16 @@ jobs:
           print('V2_2_BASE_SAFETY_GATE_PASS')
           PY
 
-      - name: Positive content identity — Al-Fatiha must pass
+      - name: Record content-gate architecture decision
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          python3 python/content_gate_v22.py \
-            dist/minshawi_reference_16k.wav dist/minshawi_reference_16k.wav \
-            --expect accept > dist/V2_2_CONTENT_POSITIVE.json
-          cat dist/V2_2_CONTENT_POSITIVE.json
-
-      - name: Negative content identity — Al-Ikhlas must be rejected
-        working-directory: tajweed-fatiha-v1.0.2
-        run: |
-          curl --fail --location --retry 3 \
-            'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' \
-            --output dist/minshawi_ikhlas.ogg
-          ffmpeg -hide_banner -loglevel error -y \
-            -i dist/minshawi_ikhlas.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/minshawi_ikhlas_16k.wav
-          python3 python/content_gate_v22.py \
-            dist/minshawi_reference_16k.wav dist/minshawi_ikhlas_16k.wav \
-            > dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json
-          cat dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          r=json.loads(Path('dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json').read_text(encoding='utf-8'))
-          assert r['accepted'] is False, r
-          print('V2_2_IKHLAS_REJECTION_GATE_PASS')
-          PY
-          rm -f dist/minshawi_ikhlas.ogg dist/minshawi_ikhlas_16k.wav
+          cat > dist/V2_2_CONTENT_GATE_BUILD_NOTE.txt <<'EOF'
+          The legacy hand-crafted content_gate_v22.py is intentionally NOT a release gate.
+          It was proven to accept wrong-surah audio and has been retired from the native build.
+          The v2.2 Quran CTC workflow calibrates expected-text forced CTC scores across reciters.
+          No final APK may be labeled release-ready until the Android CTC gate is integrated and
+          wrong-surah audio is blocked before Tajweed colors are rendered.
+          EOF
 
       - name: Cross-reciter regression — Maher Al-Muaiqly ayat 2-7
         working-directory: tajweed-fatiha-v1.0.2
