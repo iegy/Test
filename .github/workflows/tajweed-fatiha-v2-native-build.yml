@@ -113,8 +113,16 @@ jobs:
       - name: Cross-reciter hierarchical regression — Maher Al-Muaiqly
         working-directory: tajweed-fatiha-v1.0.2
         run: |
+          # This legacy v2.1 segmentation regression was calibrated on the Commons
+          # recording. Keep it isolated from the independent MP3 used by the CTC gate.
+          curl --fail --location --retry 3 \
+            'https://upload.wikimedia.org/wikipedia/commons/9/9e/Surat_al-Fatiha_Recited_by_Maher_al-Muaiqaly.ogg' \
+            --output dist/ctc/maher_hierarchical_fixture.ogg
+          ffmpeg -hide_banner -loglevel error -y \
+            -i dist/ctc/maher_hierarchical_fixture.ogg -ar 16000 -ac 1 -c:a pcm_s16le \
+            dist/ctc/maher_hierarchical_fixture.wav
           python3 python/maher_cross_reciter_v21.py \
-            dist/ctc/minshawi_fatiha.wav dist/ctc/maher_fatiha.wav \
+            dist/ctc/minshawi_fatiha.wav dist/ctc/maher_hierarchical_fixture.wav \
             > dist/V2_2_MAHER_CROSS_RECITER.json
           python3 - <<'PY'
           import json
