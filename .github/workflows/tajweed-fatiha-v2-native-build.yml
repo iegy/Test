@@ -1,0 +1,76 @@
+name: Build Tajweed Al-Fatiha Native v2
+
+on:
+  push:
+    branches:
+      - codex/tajweed-fatiha-v2-native-rebuild
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install CC0 Al-Fatiha reference
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          mkdir -p app/src/main/assets
+          curl --fail --location --retry 3 \
+            'https://upload.wikimedia.org/wikipedia/commons/6/6d/AlF%C4%81tihatulKit%C4%81b.ogg' \
+            --output app/src/main/assets/fatiha-reference-cc0.ogg
+          test "$(stat -c%s app/src/main/assets/fatiha-reference-cc0.ogg)" -gt 700000
+
+      - name: Build native debug APK
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon clean assembleDebug
+
+      - name: Verify APK launcher and signature
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          APK='app/build/outputs/apk/debug/app-debug.apk'
+          test -s "$APK"
+          FOUND=0
+          while read -r DEX; do
+            echo "Checking $DEX"
+            if unzip -p "$APK" "$DEX" | strings | grep -F 'com/iegy/tajweed/fatiha/MainActivity'; then FOUND=1; fi
+          done < <(zipinfo -1 "$APK" | grep -E '^classes[0-9]*\.dex$')
+          test "$FOUND" -eq 1
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          mkdir -p dist
+          cp "$APK" dist/Tajweed_AlFatiha_v2.0.0_native_installable.apk
+          sha256sum dist/Tajweed_AlFatiha_v2.0.0_native_installable.apk > dist/SHA256SUMS.txt
+          {
+            echo 'Architecture: Native Android/Kotlin'
+            echo 'WebView dependency: removed from v2 launcher path'
+            echo 'Bundled reference: CC0 Al-Fatiha OGG installed at build time'
+            echo 'Microphone: AudioRecord native PCM/WAV'
+            echo 'File import: Android document picker + MediaCodec decode'
+            echo 'Playback: AudioTrack native PCM'
+            echo 'Analysis: known-text acoustic alignment + VAD + timing/madd + confidence'
+            echo 'Launcher class: verified in DEX'
+            echo 'APK signature: verified by apksigner'
+            echo "APK bytes: $(stat -c%s dist/Tajweed_AlFatiha_v2.0.0_native_installable.apk)"
+          } > dist/CI_VERIFICATION_V2.txt
+
+      - name: Package source
+        working-directory: tajweed-fatiha-v1.0.2
+        run: zip -qr dist/QuranTajweedNative_Source_v2.0.0.zip . -x '.gradle/*' 'app/build/*' 'dist/*'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tajweed-AlFatiha-Native-v2.0.0
+          path: tajweed-fatiha-v1.0.2/dist/*
+          if-no-files-found: error
+          retention-days: 14
