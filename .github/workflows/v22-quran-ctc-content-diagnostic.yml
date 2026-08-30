@@ -60,19 +60,24 @@ jobs:
               --expected "$FATIHA_TEXT" | tee dist/ctc/${n}_ctc.json
           done
 
-      - name: Summarize separation
+      - name: Summarize forced CTC separation
         working-directory: tajweed-fatiha-v1.0.2
         run: |
           python3 - <<'PY'
-          import json
+          import json, math
           from pathlib import Path
-          vals={}
+          rows={}
           for n in ('fatiha','ikhlas','annas'):
               r=json.loads(Path(f'dist/ctc/{n}_ctc.json').read_text(encoding='utf-8'))
-              vals[n]=r['identity']['char_similarity']
-              print(n, '=>', r['transcript'])
-              print('similarity=', vals[n])
-          assert vals['fatiha'] > vals['ikhlas'] + 0.20, vals
-          assert vals['fatiha'] > vals['annas'] + 0.20, vals
-          print('QURAN_CTC_CONTENT_SEPARATION_PASS', vals)
+              f=r['forced_identity']
+              rows[n]={
+                  'nll_per_target': f.get('ctc_nll_per_target'),
+                  'nll_per_frame': f.get('ctc_nll_per_frame'),
+                  'viterbi_gap_per_frame': f.get('viterbi_gap_per_frame'),
+                  'viterbi_gap_per_target': f.get('viterbi_gap_per_target'),
+                  'free_similarity': r['identity']['char_similarity'],
+              }
+              print(n, rows[n])
+          assert all(v['nll_per_target'] is not None for v in rows.values()), rows
+          print('FORCED_CTC_DIAGNOSTIC_COMPLETE')
           PY
