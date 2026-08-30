@@ -9,7 +9,9 @@ android {
 
     defaultConfig {
         applicationId = "com.iegy.tajweed.fatiha"
-        minSdk = 23
+        // ONNX Runtime Android 1.29.0 officially requires API 24+.
+        // Do not override the library manifest: doing so could cause runtime crashes on API 23.
+        minSdk = 24
         targetSdk = 35
         versionCode = 7
         versionName = "2.2.0"
