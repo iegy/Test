@@ -1,0 +1,43 @@
+name: V2.2 Spectral Content Diagnostic
+
+on:
+  push:
+    branches:
+      - codex/tajweed-fatiha-v2-2-0-content-gate
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg if missing
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+      - name: Download same-reciter fixtures
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          mkdir -p dist
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' -o dist/fatiha.ogg
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' -o dist/ikhlas.ogg
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/8/8d/Sura_Minshawi_114.ogg' -o dist/annas.ogg || \
+          curl -fsSL 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sura%20Minshawi%20114.ogg' -o dist/annas.ogg
+          for n in fatiha ikhlas annas; do
+            ffmpeg -hide_banner -loglevel error -y -i dist/$n.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/$n.wav
+          done
+      - name: Print spectral identity costs
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          echo '=== FATIHA SELF ==='
+          python3 python/spectral_identity_v22.py dist/fatiha.wav dist/fatiha.wav
+          echo '=== IKHLAS NEGATIVE ==='
+          python3 python/spectral_identity_v22.py dist/fatiha.wav dist/ikhlas.wav
+          echo '=== AN-NAS SAME-LENGTH NEGATIVE ==='
+          python3 python/spectral_identity_v22.py dist/fatiha.wav dist/annas.wav
