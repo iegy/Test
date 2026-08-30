@@ -25,7 +25,7 @@ class ReferenceRepository(private val context: Context) {
 
     fun sourceLabel(ayahNumber: Int): String {
         val custom = customFile(ayahNumber)
-        return if (custom.exists()) "مرجع محلي مخصص" else "تلاوة مدمجة داخل التطبيق · CC0"
+        return if (custom.exists()) "مرجع محلي مخصص" else "المنشاوي · مرجع مدمج · ملكية عامة"
     }
 
     fun hasCustom(ayahNumber: Int): Boolean = customFile(ayahNumber).exists()
@@ -47,14 +47,17 @@ class ReferenceRepository(private val context: Context) {
             return SignalEngine.makeReference(audio, "custom")
         }
         val audio = getPlaybackAudio(ayahNumber)
-        return SignalEngine.makeReference(audio, "built-in-cc0")
+        return SignalEngine.makeReference(audio, "built-in-minshawi-pd")
     }
 
     fun getPlaybackAudio(ayahNumber: Int): PcmAudio {
         val custom = customFile(ayahNumber)
         if (custom.exists()) return WavIO.readMono16(custom)
         val all = ensureBuiltIn()
-        if (ayahNumber == 0) return all
+        if (ayahNumber == 0) {
+            val rr = ensureRanges()
+            return slice(all, rr.first().startMs, rr.last().endMs, "reference-full-surah")
+        }
         val r = ensureRanges()[ayahNumber - 1]
         return slice(all, r.startMs, r.endMs, "reference-ayah-$ayahNumber")
     }
@@ -68,7 +71,7 @@ class ReferenceRepository(private val context: Context) {
     @Synchronized private fun ensureBuiltIn(): PcmAudio {
         builtIn?.let { return it }
         val decoded = AudioDecoder.decodeAsset(context, "fatiha-reference-cc0.ogg")
-        builtIn = decoded.copy(sourceLabel = "embedded-cc0")
+        builtIn = decoded.copy(sourceLabel = "embedded-minshawi-pd")
         ranges = findAyahRanges(decoded)
         return builtIn!!
     }
@@ -117,6 +120,28 @@ class ReferenceRepository(private val context: Context) {
                 val len = i - start
                 if (len >= 4) candidates += Candidate(start + len / 2, len)
             } else i++
+        }
+
+        val strongPauses = candidates.filter { it.silenceFrames >= 10 }.sortedBy { it.frameIndex }
+        if (strongPauses.size == 7) {
+            val bounds = strongPauses.map { it.frameIndex * 50.0 }.toMutableList()
+            bounds += min(audio.durationMs.toDouble(), (last + 1) * 50.0)
+            return (0 until 7).map { idx ->
+                val startMs = max(0.0, bounds[idx] - 120.0)
+                val endMs = min(audio.durationMs.toDouble(), bounds[idx + 1] + 120.0)
+                TimeRange(startMs.toLong(), max(startMs + 300.0, endMs).toLong())
+            }
+        }
+
+        if (strongPauses.size == 6) {
+            val bounds = mutableListOf(first * 50.0)
+            bounds += strongPauses.map { it.frameIndex * 50.0 }
+            bounds += min(audio.durationMs.toDouble(), (last + 1) * 50.0)
+            return (0 until 7).map { idx ->
+                val startMs = max(0.0, bounds[idx] - 120.0)
+                val endMs = min(audio.durationMs.toDouble(), bounds[idx + 1] + 120.0)
+                TimeRange(startMs.toLong(), max(startMs + 300.0, endMs).toLong())
+            }
         }
 
         val verseWeights = FatihaContent.ayat.map { it.words.size + it.madd.size * 0.28 }
