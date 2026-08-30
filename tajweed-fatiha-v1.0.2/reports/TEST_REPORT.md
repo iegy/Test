@@ -4,7 +4,7 @@
 
 Command: `node tests/core.test.js`
 
-Result: **8/8 passed**.
+Result: **9/9 passed**.
 
 1. Canonical Al-Fatiha pack has seven ayat and 29 words.
 2. Silence is rejected with zero confidence.
@@ -14,19 +14,16 @@ Result: **8/8 passed**.
 6. Reference mode returns alignment diagnostics.
 7. A controlled temporal deletion is flagged as a failed mapped word.
 8. All configured madd rules point to valid words and use supported targets.
+9. Every ayah has a Tajweed learning plan and the final ayah includes the six-count obligatory madd rule.
 
-## APK structural tests
+## APK build and structural tests — 1.0.2
 
-- APK contains `AndroidManifest.xml`, `classes.dex`, resources, all local assets, and third-party notice.
-- DEX SHA-1 and Adler-32 header values were regenerated after the audited in-place bootstrap patch.
-- App ID string verified: `com.iegy.tajweed.prototype.v1`.
-- Hotfix 1.0.1 verified that the manifest, Activity descriptors, BuildConfig/R classes, and compiled resource package all use the same namespace; zero old package strings remain.
-- Hotfix DEX SHA-1 and Adler-32 values independently recomputed and verified after package normalization.
-- Hotfix versionCode verified as 2 so it can update the installed versionCode 1 package.
-- Arabic label verified: `تجويد الفاتحة`.
-- Packaged target SDK verified: 29; maintained Kotlin source target SDK: 35.
-- JAR/APK v1 signature cryptographically verified on all 11 non-META-INF file entries using Java `JarFile` verification.
-- Final SHA-256 is recorded in `SHA256SUMS.txt` in the delivery bundle.
+- Android Gradle build completed successfully from Kotlin source using JDK 17, Gradle 8.9, AGP 8.7.3, and Android SDK 35.
+- APK contains the packaged CC0 OGG reference, UI assets, compiled resources, and DEX bytecode.
+- Launcher class is checked across all `classes*.dex` files.
+- APK signature is verified with Android Build Tools `apksigner`.
+- App ID: `com.iegy.tajweed.prototype.v1`; versionCode: 3; versionName: 1.0.2; target SDK: 35.
+- Final SHA-256 is generated beside the APK in `SHA256SUMS.txt`.
 
 ## Acceptance matrix
 
@@ -37,7 +34,7 @@ Result: **8/8 passed**.
 | Recording processable | Capture → PCM → local analyzer path implemented; physical-device confirmation pending |
 | Silence does not score | Pass |
 | Empty/too-short recording rejected | Pass |
-| Correct trusted reference strong result | Not executed: no redistributable trusted recording was supplied |
+| Correct reference strong result | Engine path covered by identical/near-identical synthetic reference tests; learner accuracy validation pending |
 | Deliberately missing word detected | Pass on controlled temporal deletion with imported-reference mode; real learner validation pending |
 | No NaN/invalid values | Pass on automated outputs |
 | Model failure readable | Pass for input/reference errors; no ML runtime is bundled |

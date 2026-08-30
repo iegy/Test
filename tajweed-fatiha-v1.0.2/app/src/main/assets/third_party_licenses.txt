@@ -19,3 +19,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Bundled Al-Fatiha reference recitation
+Title: AlFātihatulKitāb.ogg
+Creator: Ibrahimmusa4
+Source: Wikimedia Commons
+Source page: https://commons.wikimedia.org/wiki/File:AlF%C4%81tihatulKit%C4%81b.ogg
+License: CC0 1.0 Universal Public Domain Dedication
+License: https://creativecommons.org/publicdomain/zero/1.0/

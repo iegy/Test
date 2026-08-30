@@ -8,12 +8,14 @@
 | Microphone recording | Implemented | WebAudio capture with Android runtime permission bridge |
 | Offline processing | Implemented | All analysis code packaged in the APK |
 | Input validation | Implemented | Duration, speech ratio, VAD, SNR, clipping |
-| Word time alignment | Implemented, experimental | Expected-duration boundaries; DTW mapping when a reference is imported |
+| Word time alignment | Implemented, experimental | Expected-duration boundaries; DTW mapping with the bundled or imported reference |
 | Obvious missing segment | Implemented with reference | A short mapped word is failed only above confidence threshold |
 | Madd measurement | Implemented, experimental | Sustained-voice duration / locally estimated harakah |
 | Confidence-first feedback | Implemented | Unsupported/low-confidence cases return `undecidable` |
 | Local attempts | Implemented | Last 20 summaries in localStorage |
-| Reference playback | Implemented by local import | No copyrighted recitation bundled |
+| Reference playback | Implemented | CC0 full-surah recitation bundled; per-ayah segments derived locally |
+| Test audio input | Implemented | Analyze an audio file and replay the learner recording |
+| Tajweed curriculum | Implemented | Rule plan for all seven ayat; only supported acoustic rules are scored |
 | Debug panel | Implemented | Timings, confidence, sample rates, rules, DTW, limitations |
 
 ## Not claimed as implemented

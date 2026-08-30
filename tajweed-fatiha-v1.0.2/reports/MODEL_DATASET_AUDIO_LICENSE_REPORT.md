@@ -14,9 +14,16 @@ Al-Fatiha text, word boundaries, expected broad phonetic script, and initial mad
 
 ## Audio
 
-No Sheikh recording or generated recitation is bundled. This intentionally avoids assuming that freely streamable audio is legally redistributable.
+One full Al-Fatiha reference is bundled:
 
-The user can import an audio file they are authorized to use. It is stored only on that device. Before any future built-in Husary, Minshawi, or Abdul Basit clips are shipped, written redistribution terms must be retained with the project.
+- File: `fatiha-reference-cc0.ogg`
+- Title: `AlFātihatulKitāb.ogg`
+- Creator: Ibrahimmusa4
+- Source: Wikimedia Commons, `File:AlFātihatulKitāb.ogg`
+- License: CC0 1.0 Universal Public Domain Dedication
+- Recorded duration/size reported by Commons: about 92.72 seconds / 809,597 bytes
+
+The application derives approximate per-ayah segments locally from this full recitation. A user may still import another audio file they are authorized to use; it remains on that device.
 
 ## Third-party code
 
