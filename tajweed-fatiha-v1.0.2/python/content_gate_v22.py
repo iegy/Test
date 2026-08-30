@@ -7,7 +7,7 @@ It is NOT a tajweed judge and it is intentionally independent from word-level
 feedback. A negative gate produces no word colours.
 """
 from __future__ import annotations
-import argparse, json, math
+import argparse, json, math, sys
 import reference_pipeline as rp
 
 
@@ -178,11 +178,15 @@ def main():
     ap.add_argument("--expect", choices=["accept", "reject"])
     args = ap.parse_args()
     result = gate(args.reference_wav, args.candidate_wav)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    if args.expect == "accept" and not result["accepted"]:
-        raise SystemExit(2)
-    if args.expect == "reject" and result["accepted"]:
-        raise SystemExit(3)
+    payload = json.dumps(result, ensure_ascii=False, indent=2)
+    print(payload)
+    failed_expectation = (
+        (args.expect == "accept" and not result["accepted"]) or
+        (args.expect == "reject" and result["accepted"])
+    )
+    if failed_expectation:
+        print("CONTENT_GATE_EXPECTATION_FAILED\n" + payload, file=sys.stderr)
+        raise SystemExit(2 if args.expect == "accept" else 3)
 
 
 if __name__ == "__main__":
