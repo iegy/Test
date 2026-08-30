@@ -66,14 +66,57 @@ internal fun detectSpeech(frames: List<FrameFeature>): VadResult {
     return VadResult(frames, segments, threshold, noise, snrDb, speechMs, peak)
 }
 
+/**
+ * Cepstral-mean/variance-style normalization for the lightweight hand-crafted
+ * alignment features. This removes utterance-level energy and spectral-colour
+ * bias so DTW follows articulation changes more than one reciter's timbre.
+ */
+internal fun normalizeForAlignment(frames: List<FrameFeature>): List<FrameFeature> {
+    val active = frames.filter { it.active }
+    if (active.size < 6) return frames.map { it.copy() }
+
+    data class Stats(val mean: Double, val std: Double)
+    fun stats(values: List<Double>, floor: Double): Stats {
+        val mean = values.average()
+        val variance = values.sumOf { (it - mean) * (it - mean) } / max(1, values.size)
+        return Stats(mean, max(floor, sqrt(variance)))
+    }
+    fun energy(f: FrameFeature) = ln(f.rms + 1e-6)
+    fun band(f: FrameFeature, which: Int): Double {
+        val sum = f.low + f.mid + f.high + 1e-7
+        val v = when (which) { 0 -> f.low; 1 -> f.mid; else -> f.high }
+        return ln(v / sum + 1e-5)
+    }
+
+    val eS = stats(active.map(::energy), .18)
+    val zS = stats(active.map { it.zcr }, .015)
+    val lS = stats(active.map { band(it, 0) }, .08)
+    val mS = stats(active.map { band(it, 1) }, .08)
+    val hS = stats(active.map { band(it, 2) }, .08)
+    fun n(v: Double, s: Stats) = ((v - s.mean) / s.std).coerceIn(-4.0, 4.0)
+
+    return frames.map { f ->
+        FrameFeature(
+            f.startMs, f.endMs,
+            n(energy(f), eS), n(f.zcr, zS),
+            n(band(f, 0), lS), n(band(f, 1), mS), n(band(f, 2), hS),
+            f.active
+        )
+    }
+}
+
 internal fun compactFrames(frames: List<FrameFeature>): List<FrameFeature> {
     val active = frames.filter { it.active }
     return if (active.size <= 800) active else active.filterIndexed { i, _ -> i % ((active.size / 800) + 1) == 0 }
 }
 
 private fun distance(a: FrameFeature, b: FrameFeature): Double {
-    fun lr(x: Double, y: Double) = abs(ln((x + 1e-5) / (y + 1e-5)))
-    return lr(a.rms, b.rms) * .22 + abs(a.zcr - b.zcr) * 1.5 + lr(a.low, b.low) * .22 + lr(a.mid, b.mid) * .18 + lr(a.high, b.high) * .18
+    fun robust(v: Double) = min(3.0, abs(v))
+    return robust(a.rms - b.rms) * .10 +
+        robust(a.zcr - b.zcr) * .12 +
+        robust(a.low - b.low) * .26 +
+        robust(a.mid - b.mid) * .26 +
+        robust(a.high - b.high) * .26
 }
 
 internal fun alignDtw(ref: List<FrameFeature>, obs: List<FrameFeature>): DtwResult {
@@ -82,8 +125,8 @@ internal fun alignDtw(ref: List<FrameFeature>, obs: List<FrameFeature>): DtwResu
     dp[0][0] = 0.0
     for (i in 1..n) for (j in 1..m) {
         val d = distance(ref[i - 1], obs[j - 1]); var best = dp[i - 1][j - 1]; var dir: Byte = 1
-        if (dp[i - 1][j] + .12 < best) { best = dp[i - 1][j] + .12; dir = 2 }
-        if (dp[i][j - 1] + .12 < best) { best = dp[i][j - 1] + .12; dir = 3 }
+        if (dp[i - 1][j] + .10 < best) { best = dp[i - 1][j] + .10; dir = 2 }
+        if (dp[i][j - 1] + .10 < best) { best = dp[i][j - 1] + .10; dir = 3 }
         dp[i][j] = d + best; prev[i][j] = dir
     }
     val path = mutableListOf<Pair<Int, Int>>(); var i = n; var j = m
@@ -96,7 +139,7 @@ internal fun alignDtw(ref: List<FrameFeature>, obs: List<FrameFeature>): DtwResu
 
 internal fun regionDistance(ref: List<FrameFeature>, obs: List<FrameFeature>, rs: Double, re: Double, os: Double, oe: Double): Double {
     val a = ref.filter { it.active && it.endMs >= rs && it.startMs <= re }; val b = obs.filter { it.active && it.endMs >= os && it.startMs <= oe }
-    if (a.isEmpty() || b.isEmpty()) return 1.4
+    if (a.isEmpty() || b.isEmpty()) return 1.8
     fun avg(x: List<FrameFeature>) = FrameFeature(0.0, 0.0, x.map { it.rms }.average(), x.map { it.zcr }.average(), x.map { it.low }.average(), x.map { it.mid }.average(), x.map { it.high }.average(), true)
     return distance(avg(a), avg(b))
 }
