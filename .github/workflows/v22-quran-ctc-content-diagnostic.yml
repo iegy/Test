@@ -1,0 +1,78 @@
+name: V2.2 Quran CTC Content Diagnostic
+
+on:
+  push:
+    branches:
+      - codex/tajweed-fatiha-v2-2-0-content-gate
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install runtime tools
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          python3 -m pip install --quiet --disable-pip-version-check 'onnxruntime>=1.18,<2' 'numpy>=1.26,<3'
+
+      - name: Download Apache-2 Quran CTC model and tokenizer
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          mkdir -p dist/ctc
+          curl --fail --location --retry 4 \
+            'https://huggingface.co/Tidzo/darten-quran-asr/resolve/main/model.hamza.int8.onnx?download=true' \
+            -o dist/ctc/model.hamza.int8.onnx
+          curl --fail --location --retry 4 \
+            'https://huggingface.co/HamzaSidhu786/wav2vec2-base-word-by-word-quran-asr/resolve/main/vocab.json?download=true' \
+            -o dist/ctc/vocab.json
+          test "$(stat -c%s dist/ctc/model.hamza.int8.onnx)" -gt 100000000
+          echo 'dc7373e31802a8691dd546a8883e3f330e33a01842e0e1121442ebe71601fdbc  dist/ctc/model.hamza.int8.onnx' | sha256sum -c -
+
+      - name: Download same-reciter positive and negative fixtures
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' -o dist/ctc/fatiha.ogg
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' -o dist/ctc/ikhlas.ogg
+          curl -fsSL 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sura%20Minshawi%20114.ogg' -o dist/ctc/annas.ogg
+          for n in fatiha ikhlas annas; do
+            ffmpeg -hide_banner -loglevel error -y -i dist/ctc/$n.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/ctc/$n.wav
+          done
+
+      - name: Run Quran CTC identity diagnostics
+        working-directory: tajweed-fatiha-v1.0.2
+        env:
+          FATIHA_TEXT: 'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن الرحيم مالك يوم الدين إياك نعبد وإياك نستعين اهدنا الصراط المستقيم صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين'
+        run: |
+          set -o pipefail
+          for n in fatiha ikhlas annas; do
+            echo "=== $n ==="
+            python3 python/ctc_content_identity_v22.py \
+              dist/ctc/model.hamza.int8.onnx dist/ctc/vocab.json dist/ctc/$n.wav \
+              --expected "$FATIHA_TEXT" | tee dist/ctc/${n}_ctc.json
+          done
+
+      - name: Summarize separation
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          vals={}
+          for n in ('fatiha','ikhlas','annas'):
+              r=json.loads(Path(f'dist/ctc/{n}_ctc.json').read_text(encoding='utf-8'))
+              vals[n]=r['identity']['char_similarity']
+              print(n, '=>', r['transcript'])
+              print('similarity=', vals[n])
+          assert vals['fatiha'] > vals['ikhlas'] + 0.20, vals
+          assert vals['fatiha'] > vals['annas'] + 0.20, vals
+          print('QURAN_CTC_CONTENT_SEPARATION_PASS', vals)
+          PY
