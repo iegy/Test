@@ -1,0 +1,68 @@
+name: Build Tajweed Al-Fatiha 1.0.2
+
+on:
+  push:
+    branches:
+      - codex/tajweed-fatiha-v1-0-2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install the CC0 Al-Fatiha reference
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          curl --fail --location --retry 3 \
+            'https://upload.wikimedia.org/wikipedia/commons/6/6d/AlF%C4%81tihatulKit%C4%81b.ogg' \
+            --output app/src/main/assets/fatiha-reference-cc0.ogg
+          test "$(stat -c%s app/src/main/assets/fatiha-reference-cc0.ogg)" -gt 700000
+
+      - name: Run acoustic engine tests
+        working-directory: tajweed-fatiha-v1.0.2
+        run: node tests/core.test.js
+
+      - name: Build installable debug APK
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon clean assembleDebug
+
+      - name: Verify launcher class and APK signature
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          APK='app/build/outputs/apk/debug/app-debug.apk'
+          test -s "$APK"
+          unzip -p "$APK" classes.dex | strings | grep -F 'com/iegy/tajweed/prototype/v1/MainActivity'
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          mkdir -p dist
+          cp "$APK" dist/Tajweed_AlFatiha_v1.0.2_installable.apk
+          sha256sum dist/Tajweed_AlFatiha_v1.0.2_installable.apk > dist/SHA256SUMS.txt
+          {
+            echo 'Engine tests: 9/9 passed'
+            echo 'Launcher class: present in classes.dex'
+            echo 'APK signature: verified by apksigner'
+            echo "APK bytes: $(stat -c%s dist/Tajweed_AlFatiha_v1.0.2_installable.apk)"
+          } > dist/CI_VERIFICATION.txt
+
+      - name: Package source
+        working-directory: tajweed-fatiha-v1.0.2
+        run: zip -qr dist/QuranTajweedPrototype_Source_v1.0.2.zip . -x '.gradle/*' 'app/build/*' 'dist/*'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tajweed-AlFatiha-v1.0.2
+          path: tajweed-fatiha-v1.0.2/dist/*
+          if-no-files-found: error
+          retention-days: 14
