@@ -1,4 +1,4 @@
-name: Build Tajweed Al-Fatiha Native v2.2
+name: Build Tajweed Al-Fatiha Native v2.2 FINAL
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
 
@@ -21,29 +21,36 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install ffmpeg if missing
+      - name: Install CI runtime tools
         run: |
           if ! command -v ffmpeg >/dev/null 2>&1; then
             sudo apt-get update
             sudo apt-get install -y ffmpeg
           fi
+          python3 -m pip install --quiet --disable-pip-version-check 'onnxruntime>=1.18,<2' 'numpy>=1.26,<3'
+
+      - name: Install pinned offline Quran CTC content model
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          chmod +x tools/fetch_content_gate_model.sh
+          ./tools/fetch_content_gate_model.sh
 
       - name: Install public-domain Minshawi Al-Fatiha reference
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          mkdir -p app/src/main/assets dist
+          mkdir -p app/src/main/assets dist/ctc
           curl --fail --location --retry 3 \
             'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' \
             --output app/src/main/assets/fatiha-reference-cc0.ogg
           test "$(stat -c%s app/src/main/assets/fatiha-reference-cc0.ogg)" -gt 800000
           ffmpeg -hide_banner -loglevel error -y \
             -i app/src/main/assets/fatiha-reference-cc0.ogg \
-            -ar 16000 -ac 1 -c:a pcm_s16le dist/minshawi_reference_16k.wav
+            -ar 16000 -ac 1 -c:a pcm_s16le dist/ctc/minshawi_fatiha.wav
 
       - name: Run v2.2 base safety regressions
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          python3 python/reference_pipeline.py dist/minshawi_reference_16k.wav --self-test --json > dist/V2_2_BASE_REGRESSION.json
+          python3 python/reference_pipeline.py dist/ctc/minshawi_fatiha.wav --self-test --json > dist/V2_2_BASE_REGRESSION.json
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -55,27 +62,59 @@ jobs:
           print('V2_2_BASE_SAFETY_GATE_PASS')
           PY
 
-      - name: Record content-gate architecture decision
+      - name: Download cross-reciter positive and wrong-surah fixtures
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          cat > dist/V2_2_CONTENT_GATE_BUILD_NOTE.txt <<'EOF'
-          The legacy hand-crafted content_gate_v22.py is intentionally NOT a release gate.
-          It was proven to accept wrong-surah audio and has been retired from the native build.
-          The v2.2 Quran CTC workflow calibrates expected-text forced CTC scores across reciters.
-          No final APK may be labeled release-ready until the Android CTC gate is integrated and
-          wrong-surah audio is blocked before Tajweed colors are rendered.
-          EOF
+          curl -fsSL --retry 3 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' -o dist/ctc/minshawi_ikhlas.ogg
+          curl -fsSL --retry 3 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sura%20Minshawi%20114.ogg' -o dist/ctc/minshawi_annas.ogg
+          curl -fsSL --retry 3 'https://server12.mp3quran.net/maher/128/001.mp3' -o dist/ctc/maher_fatiha.mp3
+          curl -fsSL --retry 3 'https://server12.mp3quran.net/maher/128/114.mp3' -o dist/ctc/maher_annas.mp3
+          curl -fsSL --retry 3 'https://server7.mp3quran.net/basit/001.mp3' -o dist/ctc/basit_fatiha.mp3
+          for p in dist/ctc/minshawi_ikhlas.ogg dist/ctc/minshawi_annas.ogg \
+                   dist/ctc/maher_fatiha.mp3 dist/ctc/maher_annas.mp3 dist/ctc/basit_fatiha.mp3; do
+            base="${p%.*}"
+            ffmpeg -hide_banner -loglevel error -y -i "$p" -ar 16000 -ac 1 -c:a pcm_s16le "${base}.wav"
+          done
 
-      - name: Cross-reciter regression — Maher Al-Muaiqly ayat 2-7
+      - name: Forced-CTC content identity release gate
+        working-directory: tajweed-fatiha-v1.0.2
+        env:
+          FATIHA_TEXT: 'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن الرحيم مالك يوم الدين إياك نعبد وإياك نستعين اهدنا الصراط المستقيم صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين'
+        run: |
+          set -o pipefail
+          MODEL='app/src/main/assets/quran_content_gate_v22.onnx'
+          VOCAB='app/src/main/assets/quran_content_gate_vocab.json'
+          for n in minshawi_fatiha minshawi_ikhlas minshawi_annas maher_fatiha maher_annas basit_fatiha; do
+            python3 python/ctc_content_identity_v22.py "$MODEL" "$VOCAB" "dist/ctc/$n.wav" \
+              --expected "$FATIHA_TEXT" > "dist/ctc/${n}_ctc.json"
+          done
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          POS=('minshawi_fatiha','maher_fatiha','basit_fatiha')
+          NEG=('minshawi_ikhlas','minshawi_annas','maher_annas')
+          rows={}
+          for n in POS+NEG:
+              r=json.loads(Path(f'dist/ctc/{n}_ctc.json').read_text(encoding='utf-8'))
+              f=r['forced_identity']
+              rows[n]=(float(f['ctc_nll_per_frame']),float(f['viterbi_gap_per_frame']))
+              print(n, rows[n])
+          ACCEPT_NLL=0.445; ACCEPT_GAP=0.455
+          REJECT_NLL=0.500; REJECT_GAP=0.495
+          assert all(nll <= ACCEPT_NLL and gap <= ACCEPT_GAP for nll,gap in (rows[n] for n in POS)), rows
+          assert all(nll >= REJECT_NLL or gap >= REJECT_GAP for nll,gap in (rows[n] for n in NEG)), rows
+          kt=Path('app/src/main/java/com/iegy/tajweed/fatiha/engine/ContentIdentityGate.kt').read_text(encoding='utf-8')
+          for name,value in [('ACCEPT_NLL',ACCEPT_NLL),('ACCEPT_GAP',ACCEPT_GAP),('REJECT_NLL',REJECT_NLL),('REJECT_GAP',REJECT_GAP)]:
+              m=re.search(rf'{name}\s*=\s*([0-9.]+)',kt)
+              assert m and abs(float(m.group(1))-value)<1e-9,(name,m.group(1) if m else None,value)
+          print('V2_2_FORCED_CTC_RELEASE_GATE_PASS')
+          PY
+
+      - name: Cross-reciter hierarchical regression — Maher Al-Muaiqly
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          curl --fail --location --retry 3 \
-            'https://upload.wikimedia.org/wikipedia/commons/9/9e/Surat_al-Fatiha_Recited_by_Maher_al-Muaiqaly.ogg' \
-            --output dist/maher_fatiha_fixture.ogg
-          ffmpeg -hide_banner -loglevel error -y \
-            -i dist/maher_fatiha_fixture.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/maher_fatiha_16k.wav
           python3 python/maher_cross_reciter_v21.py \
-            dist/minshawi_reference_16k.wav dist/maher_fatiha_16k.wav \
+            dist/ctc/minshawi_fatiha.wav dist/ctc/maher_fatiha.wav \
             > dist/V2_2_MAHER_CROSS_RECITER.json
           python3 - <<'PY'
           import json
@@ -85,7 +124,18 @@ jobs:
           assert r['all_cross_reciter_aligned'] is True, r
           print('V2_2_MAHER_CROSS_RECITER_GATE_PASS')
           PY
-          rm -f dist/maher_fatiha_fixture.ogg dist/maher_fatiha_16k.wav dist/minshawi_reference_16k.wav
+
+      - name: Security source gate
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          ! grep -R --line-number --fixed-string 'android.permission.INTERNET' app/src/main || {
+            echo 'INTERNET permission is forbidden in the offline prototype'; exit 1; }
+          ! grep -R --line-number -E 'http://|https://' app/src/main/java || {
+            echo 'Runtime network URL found in Android source'; exit 1; }
+          grep -F 'android.permission.RECORD_AUDIO' app/src/main/AndroidManifest.xml
+          grep -F 'MODEL_SHA256 = "dc7373e31802a8691dd546a8883e3f330e33a01842e0e1121442ebe71601fdbc"' \
+            app/src/main/java/com/iegy/tajweed/fatiha/engine/ContentIdentityGate.kt
+          echo 'V2_2_SOURCE_SECURITY_GATE_PASS'
 
       - name: Build native debug APK
         working-directory: tajweed-fatiha-v1.0.2
@@ -93,28 +143,78 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon clean assembleDebug
 
-      - name: Verify APK launcher, assets and signature
+      - name: Verify final APK assets permissions launcher and signature
         working-directory: tajweed-fatiha-v1.0.2
         run: |
           APK='app/build/outputs/apk/debug/app-debug.apk'
           test -s "$APK"
           zipinfo -1 "$APK" | grep -F 'assets/fatiha-reference-cc0.ogg'
-          FOUND=0
+          zipinfo -1 "$APK" | grep -F 'assets/quran_content_gate_v22.onnx'
+          zipinfo -1 "$APK" | grep -F 'assets/quran_content_gate_vocab.json'
+          zipinfo -1 "$APK" | grep -F 'assets/THIRD_PARTY_NOTICES.txt'
+          unzip -p "$APK" assets/quran_content_gate_v22.onnx | sha256sum | \
+            grep -F 'dc7373e31802a8691dd546a8883e3f330e33a01842e0e1121442ebe71601fdbc'
+          FOUND_MAIN=0; FOUND_GATE=0
           while read -r DEX; do
-            if unzip -p "$APK" "$DEX" | strings | grep -F 'com/iegy/tajweed/fatiha/MainActivity'; then FOUND=1; fi
+            if unzip -p "$APK" "$DEX" | strings | grep -F 'com/iegy/tajweed/fatiha/MainActivity'; then FOUND_MAIN=1; fi
+            if unzip -p "$APK" "$DEX" | strings | grep -F 'quran-ctc-content-gate-v2.2.0'; then FOUND_GATE=1; fi
           done < <(zipinfo -1 "$APK" | grep -E '^classes[0-9]*\.dex$')
-          test "$FOUND" -eq 1
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-          cp "$APK" dist/Tajweed_AlFatiha_v2.2.0_preintegration.apk
-          sha256sum dist/Tajweed_AlFatiha_v2.2.0_preintegration.apk > dist/SHA256SUMS.txt
+          test "$FOUND_MAIN" -eq 1
+          test "$FOUND_GATE" -eq 1
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump permissions "$APK" | tee dist/APK_PERMISSIONS.txt
+          ! grep -F 'android.permission.INTERNET' dist/APK_PERMISSIONS.txt
+          grep -F 'android.permission.RECORD_AUDIO' dist/APK_PERMISSIONS.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | tee dist/APK_SIGNATURE.txt
+          cp "$APK" dist/Tajweed_AlFatiha_v2.2.0_FINAL.apk
+          sha256sum dist/Tajweed_AlFatiha_v2.2.0_FINAL.apk > dist/SHA256SUMS.txt
+          stat -c 'APK_BYTES=%s' dist/Tajweed_AlFatiha_v2.2.0_FINAL.apk | tee dist/APK_SIZE.txt
+          echo 'V2_2_FINAL_APK_VERIFICATION_PASS'
 
-      - name: Package source
+      - name: Write security and release verification reports
         working-directory: tajweed-fatiha-v1.0.2
-        run: zip -qr dist/QuranTajweedNative_Source_v2.2.0_preintegration.zip . -x '.gradle/*' 'app/build/*' 'dist/*' '.kotlin/*'
+        run: |
+          cat > dist/V2_2_SECURITY_REPORT.md <<'EOF'
+          # Al-Fatiha v2.2.0 Security Review
+
+          - Android manifest contains no INTERNET permission.
+          - Learner audio is processed locally; no backend/API is used at runtime.
+          - Microphone permission is requested only for direct recording.
+          - Imported audio uses Android's system document picker and a 30 MB input guard.
+          - Quran content verification uses an INT8 ONNX model stored inside the APK.
+          - The ONNX model is pinned by SHA-256 and re-verified before first local use.
+          - Wrong-surah/review decisions block detailed Tajweed colors instead of forcing a match.
+          - The CTC content model is a text-identity gate only; it is not presented as a Tajweed judge.
+          - ONNX Runtime Android is pinned to 1.29.0.
+          - Third-party notices are packaged in the APK.
+          EOF
+          cat > dist/V2_2_CI_VERIFICATION.txt <<'EOF'
+          V2.2.0 release gates:
+          - base silence/truncation/reference safety regression: PASS
+          - Minshawi Fatiha forced-CTC positive: PASS
+          - Maher Al-Muaiqly Fatiha forced-CTC positive: PASS
+          - Abdul Basit Fatiha forced-CTC positive: PASS
+          - Minshawi Al-Ikhlas wrong-surah rejection: PASS
+          - Minshawi An-Nas wrong-surah rejection: PASS
+          - Maher An-Nas wrong-surah rejection: PASS
+          - cross-reciter hierarchical alignment regression: PASS
+          - Android compile/package: PASS
+          - content-model SHA-256 inside APK: PASS
+          - APK INTERNET permission absent: PASS
+          - launcher/content-gate classes found: PASS
+          - APK signature verification: PASS
+          EOF
+
+      - name: Package rebuildable source without large model binary
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          rm -f app/src/main/assets/quran_content_gate_v22.onnx
+          zip -qr dist/QuranTajweedNative_Source_v2.2.0_FINAL.zip . \
+            -x '.gradle/*' 'app/build/*' 'dist/*' '.kotlin/*'
+          sha256sum dist/QuranTajweedNative_Source_v2.2.0_FINAL.zip >> dist/SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Tajweed-AlFatiha-Native-v2.2.0-preintegration
+          name: Tajweed-AlFatiha-Native-v2.2.0-FINAL
           path: tajweed-fatiha-v1.0.2/dist/*
           if-no-files-found: error
           retention-days: 14
