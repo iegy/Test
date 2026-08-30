@@ -292,23 +292,104 @@ def self_test(path: str):
         ]
     }
 
+def subsequence_dtw_path(ref: List[Frame], obs: List[Frame]):
+    """Align the complete known reference inside a longer candidate sequence.
+
+    Leading/trailing candidate frames are free. Internal insertions still pay a
+    small penalty, so long prayer pauses do not force Quran speech into the
+    wrong ayah and a trailing Ameen can remain outside the matched path.
+    """
+    if not ref or not obs:
+        return 99.0, []
+    n,m=len(ref),len(obs); inf=1e18
+    prev=[0.0]*(m+1)
+    dirs=[]
+    for i in range(1,n+1):
+        cur=[inf]*(m+1); row=bytearray(m+1)
+        for j in range(1,m+1):
+            d=alignment_distance(ref[i-1],obs[j-1])
+            best=prev[j-1]; direction=1
+            if prev[j]+.10 < best:
+                best=prev[j]+.10; direction=2
+            if cur[j-1]+.10 < best:
+                best=cur[j-1]+.10; direction=3
+            cur[j]=d+best; row[j]=direction
+        dirs.append(row); prev=cur
+    end_j=min(range(1,m+1),key=lambda j:prev[j])
+    raw_cost=prev[end_j]
+    path=[]; i=n; j=end_j
+    while i>0 and j>0:
+        path.append((i-1,j-1))
+        d=dirs[i-1][j]
+        if d==2: i-=1
+        elif d==3: j-=1
+        else: i-=1; j-=1
+    path.reverse()
+    return raw_cost/max(1,len(path)),path
+
 def compare_maher_fixture(reference_path: str, maher_path: str):
+    """Real second-reciter regression without trusting subtitle timestamps.
+
+    The Maher Commons clip contains Quran ayat 2-7 followed by Ameen. We align
+    the six known Quran ayat sequentially against the whole candidate waveform.
+    The best subsequence path supplies actual acoustic ayah boundaries, so
+    silence during prayer and inaccurate subtitle clocks do not become errors.
+    """
     ref=read_wav(reference_path); cand=read_wav(maher_path)
     rr=raw_ayah_ranges(ref)
-    mr=[(0,3500),(3500,6000),(6000,10000),(10000,15000),(15000,17500),(17500,30500)]
+
+    ref_frames=[]; ref_boundary_indices=[0]
+    for r in rr[1:]:
+        a=preprocess(slice_audio(ref,r)); fr=extract_frames(a); detect_speech(fr)
+        n=compact(normalize_for_alignment(fr))
+        ref_frames.extend(n)
+        ref_boundary_indices.append(len(ref_frames))
+
+    cp=preprocess(cand); cf=extract_frames(cp); cv=detect_speech(cf)
+    cand_frames=compact(normalize_for_alignment(cf))
+    global_cost,path=subsequence_dtw_path(ref_frames,cand_frames)
+    if not path:
+        raise ValueError('Maher subsequence alignment produced no path')
+
+    mapped=[]
+    for bi in ref_boundary_indices:
+        target=min(max(0,bi),max(0,len(ref_frames)-1))
+        choices=[p for p in path if p[0]>=target]
+        chosen=(choices[0] if choices else path[-1])
+        mapped.append(cand_frames[chosen[1]].start_ms)
+    mapped[-1]=cand_frames[path[-1][1]].end_ms
+    ranges=[]
+    for i in range(6):
+        st=max(0.0,mapped[i]-120.0)
+        en=min(len(cand.samples)*1000/cand.rate,mapped[i+1]+120.0)
+        if en<=st: en=st+300.0
+        ranges.append((st,en))
+
     rows=[]
-    for ayah_no,(rs,cr) in enumerate(zip(rr[1:],mr),2):
+    for ayah_no,(rs,cr) in enumerate(zip(rr[1:],ranges),2):
         a=slice_audio(ref,rs); b=slice_audio(cand,cr)
         q=validate_audio(b); al=speaker_alignment(a,b)
-        rows.append({"ayah":ayah_no,"candidate_quality":q,"alignment":al})
+        rows.append({
+            'ayah':ayah_no,
+            'candidate_range_ms':[round(cr[0]),round(cr[1])],
+            'candidate_quality':q,
+            'alignment':al,
+        })
+    valid_count=sum(1 for x in rows if x['candidate_quality']['accepted'])
+    aligned_count=sum(1 for x in rows if x['alignment']['accepted'])
     return {
-        "fixture":"Maher al-Muaiqly Commons CC-BY-3.0 (license review pending on Commons)",
-        "compared_ayat":"2-7",
-        "basmala_compared":False,
-        "ameen_excluded":True,
-        "all_candidate_audio_valid":all(x["candidate_quality"]["accepted"] for x in rows),
-        "all_cross_reciter_aligned":all(x["alignment"]["accepted"] for x in rows),
-        "rows":rows,
+        'fixture':'Maher al-Muaiqly Commons CC-BY-3.0 (license review pending on Commons)',
+        'compared_ayat':'2-7',
+        'basmala_compared':False,
+        'ameen_excluded':True,
+        'global_subsequence_cost':round(global_cost,3),
+        'candidate_full_vad_segments':[[round(a),round(b)] for a,b in cv['segments']],
+        'candidate_ranges_ms':[[round(a),round(b)] for a,b in ranges],
+        'valid_ayah_count':valid_count,
+        'aligned_ayah_count':aligned_count,
+        'all_candidate_audio_valid':valid_count==6,
+        'all_cross_reciter_aligned':aligned_count==6,
+        'rows':rows,
     }
 
 def main():
