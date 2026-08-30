@@ -1,0 +1,53 @@
+name: V2.2 Quran ASR Content Diagnostic
+
+on:
+  push:
+    branches:
+      - codex/tajweed-fatiha-v2-2-0-content-gate
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quran-asr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install runtime
+        run: |
+          python3 -m pip install --disable-pip-version-check --no-cache-dir sherpa-onnx==1.13.2
+          if ! command -v ffmpeg >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y ffmpeg; fi
+      - name: Download pinned test fixtures and Quran ASR assets
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          mkdir -p dist/quran_asr
+          curl -fL --retry 3 'https://huggingface.co/TheGreatQuran/QuranKarim-SpeechToText-onnxModel/resolve/main/qurankarim-fastconformer-mixed.onnx?download=true' -o dist/quran_asr/model.onnx
+          curl -fL --retry 3 'https://huggingface.co/TheGreatQuran/QuranKarim-SpeechToText-onnxModel/resolve/main/tokens.txt?download=true' -o dist/quran_asr/tokens.txt
+          test "$(stat -c%s dist/quran_asr/model.onnx)" -gt 80000000
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' -o dist/fatiha.ogg
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' -o dist/ikhlas.ogg
+          curl -fsSL 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sura%20Minshawi%20114.ogg' -o dist/annas.ogg
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/9/9e/Surat_al-Fatiha_Recited_by_Maher_al-Muaiqaly.ogg' -o dist/maher.ogg
+          for n in fatiha ikhlas annas maher; do ffmpeg -hide_banner -loglevel error -y -i dist/$n.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/$n.wav; done
+      - name: Transcribe fixtures
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          python3 - <<'PY'
+          import json, wave, sherpa_onnx
+          from pathlib import Path
+          rec=sherpa_onnx.OfflineRecognizer.from_nemo_ctc(model='dist/quran_asr/model.onnx',tokens='dist/quran_asr/tokens.txt',num_threads=2)
+          out={}
+          for n in ('fatiha','maher','ikhlas','annas'):
+              with wave.open(f'dist/{n}.wav','rb') as w:
+                  assert w.getframerate()==16000 and w.getnchannels()==1 and w.getsampwidth()==2
+                  b=w.readframes(w.getnframes())
+              import array
+              a=array.array('h'); a.frombytes(b)
+              samples=[x/32768.0 for x in a]
+              s=rec.create_stream(); s.accept_waveform(16000,samples); rec.decode_stream(s)
+              out[n]=s.result.text
+          Path('dist/V2_2_QURAN_ASR_TRANSCRIPTS.json').write_text(json.dumps(out,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
