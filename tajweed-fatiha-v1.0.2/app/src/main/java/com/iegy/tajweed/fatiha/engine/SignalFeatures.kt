@@ -42,23 +42,54 @@ internal fun extractFrames(samples: FloatArray, rate: Int): List<FrameFeature> {
     return out
 }
 
+/**
+ * Robust percentile VAD for recitation.
+ *
+ * V2.0.1 used a threshold partly tied to the loudest frame. A single strong
+ * syllable, room echo or AGC burst could therefore make quiet but valid Quran
+ * speech look like silence. V2.1 anchors the threshold to p20 (noise floor)
+ * and p80 (typical speech energy), bridges only tiny consonant-sized gaps and
+ * allows slightly longer low-energy intervals inside one recitation phrase.
+ */
 internal fun detectSpeech(frames: List<FrameFeature>): VadResult {
     if (frames.isEmpty()) return VadResult(emptyList(), emptyList(), 0.0, 0.0, 0.0, 0.0, 0.0)
-    val rms = frames.map { it.rms }.sorted(); val noise = rms[(rms.size * .20).toInt().coerceIn(0, rms.lastIndex)]
-    val peak = rms.last(); val threshold = max(noise * 2.45, peak * .075)
+
+    val sorted = frames.map { it.rms }.sorted()
+    val noise = sorted[(sorted.size * .20).toInt().coerceIn(0, sorted.lastIndex)]
+    val p80 = sorted[(sorted.size * .80).toInt().coerceIn(0, sorted.lastIndex)]
+    val peak = sorted.last()
+    val threshold = max(noise * 1.60, p80 * .28)
     frames.forEach { it.active = it.rms >= threshold }
-    for (i in 1 until frames.lastIndex) if (!frames[i].active && frames[i - 1].active && frames[i + 1].active) frames[i].active = true
-    val segments = mutableListOf<SpeechSegment>(); var i = 0
+
+    // Bridge only very small inactive gaps (<= ~40 ms at the 10 ms hop).
+    var cursor = 0
+    while (cursor < frames.size) {
+        if (frames[cursor].active) { cursor++; continue }
+        val start = cursor
+        while (cursor < frames.size && !frames[cursor].active) cursor++
+        if (start > 0 && cursor < frames.size && cursor - start <= 4) {
+            for (j in start until cursor) frames[j].active = true
+        }
+    }
+
+    val segments = mutableListOf<SpeechSegment>()
+    var i = 0
     while (i < frames.size) {
         if (!frames[i].active) { i++; continue }
-        val start = frames[i].startMs; var j = i; var gap = 0
+        val start = frames[i].startMs
+        var j = i
+        var gap = 0
         while (j + 1 < frames.size) {
-            j++; if (frames[j].active) gap = 0 else gap++
-            if (gap > 12) { j -= gap; break }
+            j++
+            if (frames[j].active) gap = 0 else gap++
+            if (gap > 18) { j -= gap; break }
         }
-        if (j >= i && frames[j].endMs - start >= 90) segments += SpeechSegment(start, frames[j].endMs)
+        if (j >= i && frames[j].endMs - start >= 90) {
+            segments += SpeechSegment(start, frames[j].endMs)
+        }
         i = max(i + 1, j + gap + 1)
     }
+
     val speechMs = segments.sumOf { it.endMs - it.startMs }
     val speech = frames.filter { it.active }.map { it.rms }
     val speechRms = if (speech.isEmpty()) 0.0 else speech.average()
