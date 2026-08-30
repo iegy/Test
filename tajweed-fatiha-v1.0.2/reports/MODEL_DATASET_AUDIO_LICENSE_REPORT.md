@@ -2,39 +2,49 @@
 
 ## Machine-learning models
 
-No trained ML weights are bundled in v2.0.1. The app therefore has no remote inference dependency, paid AI API, per-recitation fee, analytics SDK, account service, or mandatory backend.
+No trained ML model is bundled in v2.0.1. Therefore there are no bundled model weights, remote inference terms, or per-request AI costs.
 
-The current on-device engine uses native Kotlin signal processing: mono 16 kHz normalization, frame features, VAD, known-text acoustic DTW alignment, timing comparison, reference-calibrated madd estimates, and confidence gates. Expected phoneme labels come from the known Quran text and are not presented as independently recognized phonemes.
+The current runtime engine is native Kotlin deterministic signal processing: resampling, normalization, frame features, VAD, known-text acoustic alignment, timing comparison, reference-calibrated madd measurement, and confidence gates.
 
-## Quran / Tajweed data
+## Datasets
 
-Al-Fatiha text, word units, expected broad phonetic labels, initial madd events, and rule labels are stored directly in source for Hafs 'an Asim. These annotations support the Al-Fatiha learning prototype and must not be generalized into claims of full Quran phoneme recognition or definitive makhraj diagnosis.
+No external learner speech dataset is bundled or used at runtime.
 
-No learner speech dataset is bundled or uploaded at runtime.
+Al-Fatiha text, word units, expected broad phonetic script, and initial madd annotations are stored directly in source for Hafs 'an Asim. These annotations and any future expansion should receive scholarly Tajweed review before strong accuracy claims.
 
-## Bundled reference audio
+## Bundled audio
 
-The native v2.0.1 build bundles a full Al-Fatiha recording by **Muhammad Siddiq Al-Minshawi**:
+The CI downloads one full Al-Fatiha reference and embeds it in the APK:
 
-- Commons title: `Sura Minshawi 1.ogg`
-- Reciter: Muhammad Siddiq Al-Minshawi (1920–1969)
-- Source identified by Wikimedia Commons: `mp3quran.net` / المكتبة الصوتية للقرآن الكريم
-- Wikimedia Commons page: `File:Sura Minshawi 1.ogg`
-- Commons copyright status: **Public domain** (PD Egypt; Commons also requires public-domain eligibility in the United States for hosted files)
-- Commons-reported duration: approximately 51.96 seconds
-- Commons-reported size: 873,841 bytes
-- Commons-reported SHA-1: `7b2b92fbceedbaeacbfd1bfdf8c96e4d8438c548`
+- Reciter: Muhammad Siddiq Al-Minshawi.
+- Source: Wikimedia Commons file `Sura_Minshawi_1.ogg`.
+- Commons status: Public Domain.
+- The recording begins with ta'awwudh; v2.0.1 detects the strong pauses, excludes the prefatory ta'awwudh, and maps the following seven chunks to Al-Fatiha ayat 1–7.
 
-The recording contains a prefatory ta'awwudh followed by Al-Fatiha. The native app detects the long pauses, excludes the prefatory segment from analysis, and maps the following seven speech segments to ayat 1–7. The user can also import a local reference for a selected ayah; imported audio remains on that device.
+A user may import another audio reference they are authorized to use; it remains on that device.
 
-The asset keeps the historical internal filename `fatiha-reference-cc0.ogg` for build compatibility; **the bundled v2.0.1 content is the public-domain Minshawi recording and is not described as CC0**.
+## Third-party build/runtime components
 
-## Android / third-party components
+### Gradle Wrapper
 
-- Gradle Wrapper 8.9 — Apache License 2.0.
-- Android platform APIs used directly: `AudioRecord`, `AudioTrack`, `MediaExtractor`, `MediaCodec`, and the system document picker.
-- The v2 launcher path is native Android/Kotlin and does not depend on the old WebView recorder bridge.
+- Upstream: Gradle 8.9 wrapper files.
+- License: Apache License 2.0.
+- Use: reproducible Android source builds.
 
-## Product-safety / accuracy statement
+### Android platform APIs
 
-This release is a learning and recitation-improvement aid. It can make useful measurements of recording quality, timing, gross omissions/cuts, acoustic similarity, and reference-normalized madd duration, but it does not claim definitive automated judgment of subtle makharij, sifat, ghunnah, qalqalah, tafkhim/tarqiq, or every Tajweed error without a validated Quran-specific phoneme model and real learner validation set.
+The application uses Android SDK APIs including `AudioRecord`, `AudioTrack`, `MediaCodec`, `MediaExtractor`, and the system document picker. No third-party recorder bridge or WebView JavaScript runtime is used by the native v2 launcher.
+
+## Network and commercial services
+
+- No paid API.
+- No backend.
+- No analytics SDK.
+- No ad SDK.
+- No account service.
+- No cloud database.
+- The app does not request Android INTERNET permission.
+
+## Accuracy/licensing boundary
+
+The Public Domain recitation is a trusted reference example, not proof that every acoustic difference from that recording is a Tajweed error. The engine compensates for tempo and uses confidence gates; subtle makhraj/sifat judgments remain outside validated scope until a Quran-specific phoneme model and learner-labelled validation set are available.
