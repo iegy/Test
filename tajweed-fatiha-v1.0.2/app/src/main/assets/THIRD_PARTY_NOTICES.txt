@@ -1,0 +1,22 @@
+THIRD-PARTY NOTICES — Quran Tajweed Al-Fatiha v2.2.0
+
+1) Quran content-identity model
+   Artifact: quran_content_gate_v22.onnx
+   Source: Tidzo/darten-quran-asr (model.hamza.int8.onnx variant used by this build)
+   Upstream Quran tokenizer: HamzaSidhu786/wav2vec2-base-word-by-word-quran-asr
+   License metadata: Apache License 2.0
+   Purpose in this app: offline expected-text CTC content verification only.
+   It is NOT used as a Tajweed ruling engine.
+
+2) ONNX Runtime Android
+   Package: com.microsoft.onnxruntime:onnxruntime-android:1.29.0
+   Copyright Microsoft and contributors.
+   License: MIT License.
+
+3) Built-in Al-Fatiha reference audio
+   Reciter: Muhammad Siddiq Al-Minshawi
+   Source: Wikimedia Commons, Sura_Minshawi_1.ogg
+   The source page identifies the recording as Public Domain.
+
+The application intentionally requests no INTERNET permission. Learner audio and
+inference remain on the Android device in this build.
