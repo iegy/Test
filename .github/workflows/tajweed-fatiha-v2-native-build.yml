@@ -21,14 +21,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install CC0 Al-Fatiha reference
+      - name: Install public-domain Minshawi Al-Fatiha reference
         working-directory: tajweed-fatiha-v1.0.2
         run: |
           mkdir -p app/src/main/assets
           curl --fail --location --retry 3 \
-            'https://upload.wikimedia.org/wikipedia/commons/6/6d/AlF%C4%81tihatulKit%C4%81b.ogg' \
+            'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' \
             --output app/src/main/assets/fatiha-reference-cc0.ogg
-          test "$(stat -c%s app/src/main/assets/fatiha-reference-cc0.ogg)" -gt 700000
+          test "$(stat -c%s app/src/main/assets/fatiha-reference-cc0.ogg)" -gt 800000
 
       - name: Build native debug APK
         working-directory: tajweed-fatiha-v1.0.2
@@ -49,28 +49,28 @@ jobs:
           test "$FOUND" -eq 1
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           mkdir -p dist
-          cp "$APK" dist/Tajweed_AlFatiha_v2.0.0_native_installable.apk
-          sha256sum dist/Tajweed_AlFatiha_v2.0.0_native_installable.apk > dist/SHA256SUMS.txt
+          cp "$APK" dist/Tajweed_AlFatiha_v2.0.1_native_installable.apk
+          sha256sum dist/Tajweed_AlFatiha_v2.0.1_native_installable.apk > dist/SHA256SUMS.txt
           {
             echo 'Architecture: Native Android/Kotlin'
             echo 'WebView dependency: removed from v2 launcher path'
-            echo 'Bundled reference: CC0 Al-Fatiha OGG installed at build time'
+            echo 'Bundled reference: Muhammad Siddiq Al-Minshawi Al-Fatiha, Wikimedia Commons public-domain file'
             echo 'Microphone: AudioRecord native PCM/WAV'
             echo 'File import: Android document picker + MediaCodec decode'
             echo 'Playback: AudioTrack native PCM'
-            echo 'Analysis: known-text acoustic alignment + VAD + timing/madd + confidence'
+            echo 'Analysis: known-text acoustic alignment + VAD + reference-calibrated timing/madd + confidence'
             echo 'Launcher class: verified in DEX'
             echo 'APK signature: verified by apksigner'
-            echo "APK bytes: $(stat -c%s dist/Tajweed_AlFatiha_v2.0.0_native_installable.apk)"
+            echo "APK bytes: $(stat -c%s dist/Tajweed_AlFatiha_v2.0.1_native_installable.apk)"
           } > dist/CI_VERIFICATION_V2.txt
 
       - name: Package source
         working-directory: tajweed-fatiha-v1.0.2
-        run: zip -qr dist/QuranTajweedNative_Source_v2.0.0.zip . -x '.gradle/*' 'app/build/*' 'dist/*'
+        run: zip -qr dist/QuranTajweedNative_Source_v2.0.1.zip . -x '.gradle/*' 'app/build/*' 'dist/*'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Tajweed-AlFatiha-Native-v2.0.0
+          name: Tajweed-AlFatiha-Native-v2.0.1
           path: tajweed-fatiha-v1.0.2/dist/*
           if-no-files-found: error
           retention-days: 14
