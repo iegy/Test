@@ -4,22 +4,29 @@ plugins {
 }
 
 android {
-    namespace = "com.iegy.tajweed.prototype.v1"
+    namespace = "com.iegy.tajweed.fatiha"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.iegy.tajweed.prototype.v1"
+        applicationId = "com.iegy.tajweed.fatiha"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "2.0.0"
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+    }
+
+    androidResources {
+        noCompress += listOf("ogg", "wav")
     }
 
     compileOptions {
