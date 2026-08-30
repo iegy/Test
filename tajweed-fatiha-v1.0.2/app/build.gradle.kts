@@ -11,8 +11,8 @@ android {
         applicationId = "com.iegy.tajweed.fatiha"
         minSdk = 23
         targetSdk = 35
-        versionCode = 6
-        versionName = "2.1.0"
+        versionCode = 7
+        versionName = "2.2.0"
     }
 
     buildTypes {
@@ -26,7 +26,7 @@ android {
     }
 
     androidResources {
-        noCompress += listOf("ogg", "wav")
+        noCompress += listOf("ogg", "wav", "onnx")
     }
 
     compileOptions {
@@ -34,4 +34,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+}
+
+dependencies {
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.25.1")
 }
