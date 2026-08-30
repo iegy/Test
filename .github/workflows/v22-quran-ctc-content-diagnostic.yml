@@ -37,14 +37,24 @@ jobs:
           test "$(stat -c%s dist/ctc/model.hamza.int8.onnx)" -gt 100000000
           echo 'dc7373e31802a8691dd546a8883e3f330e33a01842e0e1121442ebe71601fdbc  dist/ctc/model.hamza.int8.onnx' | sha256sum -c -
 
-      - name: Download same-reciter positive and negative fixtures
+      - name: Download positive and negative Quran fixtures
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' -o dist/ctc/fatiha.ogg
-          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' -o dist/ctc/ikhlas.ogg
-          curl -fsSL 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sura%20Minshawi%20114.ogg' -o dist/ctc/annas.ogg
-          for n in fatiha ikhlas annas; do
-            ffmpeg -hide_banner -loglevel error -y -i dist/ctc/$n.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/ctc/$n.wav
+          # Minshawi: public-domain Wikimedia fixtures used as the same-speaker baseline.
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' -o dist/ctc/minshawi_fatiha.ogg
+          curl -fsSL 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' -o dist/ctc/minshawi_ikhlas.ogg
+          curl -fsSL 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sura%20Minshawi%20114.ogg' -o dist/ctc/minshawi_annas.ogg
+
+          # Cross-speaker positives/negative are ephemeral CI fixtures only. They are
+          # downloaded for regression measurement and are NOT committed or packaged.
+          curl -fsSL --retry 3 'https://server12.mp3quran.net/maher/128/001.mp3' -o dist/ctc/maher_fatiha.mp3
+          curl -fsSL --retry 3 'https://server12.mp3quran.net/maher/128/114.mp3' -o dist/ctc/maher_annas.mp3
+          curl -fsSL --retry 3 'https://server7.mp3quran.net/basit/001.mp3' -o dist/ctc/basit_fatiha.mp3
+
+          for p in dist/ctc/minshawi_fatiha.ogg dist/ctc/minshawi_ikhlas.ogg dist/ctc/minshawi_annas.ogg \
+                   dist/ctc/maher_fatiha.mp3 dist/ctc/maher_annas.mp3 dist/ctc/basit_fatiha.mp3; do
+            base="${p%.*}"
+            ffmpeg -hide_banner -loglevel error -y -i "$p" -ar 16000 -ac 1 -c:a pcm_s16le "${base}.wav"
           done
 
       - name: Run Quran CTC identity diagnostics
@@ -53,7 +63,7 @@ jobs:
           FATIHA_TEXT: 'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن الرحيم مالك يوم الدين إياك نعبد وإياك نستعين اهدنا الصراط المستقيم صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين'
         run: |
           set -o pipefail
-          for n in fatiha ikhlas annas; do
+          for n in minshawi_fatiha minshawi_ikhlas minshawi_annas maher_fatiha maher_annas basit_fatiha; do
             echo "=== $n ==="
             python3 python/ctc_content_identity_v22.py \
               dist/ctc/model.hamza.int8.onnx dist/ctc/vocab.json dist/ctc/$n.wav \
@@ -64,13 +74,16 @@ jobs:
         working-directory: tajweed-fatiha-v1.0.2
         run: |
           python3 - <<'PY'
-          import json, math
+          import json
           from pathlib import Path
+
+          names=('minshawi_fatiha','minshawi_ikhlas','minshawi_annas','maher_fatiha','maher_annas','basit_fatiha')
           rows={}
-          for n in ('fatiha','ikhlas','annas'):
+          for n in names:
               r=json.loads(Path(f'dist/ctc/{n}_ctc.json').read_text(encoding='utf-8'))
               f=r['forced_identity']
               rows[n]={
+                  'duration_ms': r['duration_ms'],
                   'nll_per_target': f.get('ctc_nll_per_target'),
                   'nll_per_frame': f.get('ctc_nll_per_frame'),
                   'viterbi_gap_per_frame': f.get('viterbi_gap_per_frame'),
@@ -78,6 +91,10 @@ jobs:
                   'free_similarity': r['identity']['char_similarity'],
               }
               print(n, rows[n])
-          assert all(v['nll_per_target'] is not None for v in rows.values()), rows
-          print('FORCED_CTC_DIAGNOSTIC_COMPLETE')
+          assert all(v['nll_per_frame'] is not None for v in rows.values()), rows
+          print('POSITIVE_MAX_NLL_FRAME=', max(rows[n]['nll_per_frame'] for n in ('minshawi_fatiha','maher_fatiha','basit_fatiha')))
+          print('NEGATIVE_MIN_NLL_FRAME=', min(rows[n]['nll_per_frame'] for n in ('minshawi_ikhlas','minshawi_annas','maher_annas')))
+          print('POSITIVE_MAX_VITERBI_GAP_FRAME=', max(rows[n]['viterbi_gap_per_frame'] for n in ('minshawi_fatiha','maher_fatiha','basit_fatiha')))
+          print('NEGATIVE_MIN_VITERBI_GAP_FRAME=', min(rows[n]['viterbi_gap_per_frame'] for n in ('minshawi_ikhlas','minshawi_annas','maher_annas')))
+          print('FORCED_CTC_CROSS_RECITER_DIAGNOSTIC_COMPLETE')
           PY
