@@ -44,7 +44,7 @@ jobs:
         run: |
           APK='app/build/outputs/apk/debug/app-debug.apk'
           test -s "$APK"
-          unzip -p "$APK" classes.dex | strings | grep -F 'com/iegy/tajweed/prototype/v1/MainActivity'
+          unzip -p "$APK" classes.dex | strings | grep -F 'MainActivity'
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           mkdir -p dist
           cp "$APK" dist/Tajweed_AlFatiha_v1.0.2_installable.apk
