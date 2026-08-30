@@ -66,8 +66,10 @@ jobs:
           ffmpeg -hide_banner -loglevel error -y \
             -i dist/maher_fatiha_fixture.ogg \
             -ar 16000 -ac 1 -c:a pcm_s16le dist/maher_fatiha_16k.wav
-          python3 python/reference_pipeline.py dist/minshawi_reference_16k.wav \
-            --compare-maher dist/maher_fatiha_16k.wav --json > dist/V2_1_MAHER_CROSS_RECITER.json
+          python3 python/maher_cross_reciter_v21.py \
+            dist/minshawi_reference_16k.wav dist/maher_fatiha_16k.wav \
+            > dist/V2_1_MAHER_CROSS_RECITER.json
+          cat dist/V2_1_MAHER_CROSS_RECITER.json
           python3 - <<'PY'
           import json
           from pathlib import Path
