@@ -26,6 +26,8 @@ android {
     }
 
     androidResources {
+        // The model is already INT8 and does not benefit materially from APK recompression.
+        // Keeping it stored also avoids an additional decompression spike on first use.
         noCompress += listOf("ogg", "wav", "onnx")
     }
 
@@ -37,5 +39,6 @@ android {
 }
 
 dependencies {
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.25.1")
+    // Pinned intentionally for reproducible offline inference. MIT licensed.
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.29.0")
 }
