@@ -21,6 +21,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Install ffmpeg if missing
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+
       - name: Install public-domain Minshawi Al-Fatiha reference
         working-directory: tajweed-fatiha-v1.0.2
         run: |
