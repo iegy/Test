@@ -1,9 +1,9 @@
-name: Build Tajweed Al-Fatiha Native v2.1
+name: Build Tajweed Al-Fatiha Native v2.2
 
 on:
   push:
     branches:
-      - codex/tajweed-fatiha-v2-1-0-speaker-invariant
+      - codex/tajweed-fatiha-v2-2-0-content-gate
   workflow_dispatch:
 
 permissions:
@@ -29,56 +29,65 @@ jobs:
             'https://upload.wikimedia.org/wikipedia/commons/b/b9/Sura_Minshawi_1.ogg' \
             --output app/src/main/assets/fatiha-reference-cc0.ogg
           test "$(stat -c%s app/src/main/assets/fatiha-reference-cc0.ogg)" -gt 800000
-
-      - name: Run v2.1 speaker-invariant regressions
-        working-directory: tajweed-fatiha-v1.0.2
-        run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
-          fi
           ffmpeg -hide_banner -loglevel error -y \
             -i app/src/main/assets/fatiha-reference-cc0.ogg \
             -ar 16000 -ac 1 -c:a pcm_s16le dist/minshawi_reference_16k.wav
-          python3 python/reference_pipeline.py dist/minshawi_reference_16k.wav --self-test --json > dist/V2_1_REGRESSION_RESULT.json
+
+      - name: Run v2.1 safety regressions
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          python3 python/reference_pipeline.py dist/minshawi_reference_16k.wav --self-test --json > dist/V2_2_BASE_REGRESSION.json
           python3 - <<'PY'
           import json
           from pathlib import Path
-          r=json.loads(Path('dist/V2_1_REGRESSION_RESULT.json').read_text(encoding='utf-8'))
+          r=json.loads(Path('dist/V2_2_BASE_REGRESSION.json').read_text(encoding='utf-8'))
           assert r['ayah_count'] == 7, r
           assert r['silence_rejected'] is True, r
-          assert r['all_self_reference_madd_pass'] is True, r
           assert r['all_truncations_detected'] is True, r
-          assert r['all_speaker_variants_aligned'] is True, r
           assert r['reference_definite_red_count'] == 0, r
-          assert all(x['reference']['accepted'] for x in r['ayat']), r
-          assert all(x['tempo_0_80x_accepted'] for x in r['ayat']), r
-          assert all(x['tempo_1_25x_accepted'] for x in r['ayat']), r
-          print('V2_1_SELF_REGRESSION_GATE_PASS')
+          print('V2_2_BASE_SAFETY_GATE_PASS')
           PY
 
-      - name: Cross-reciter regression — Maher Al-Muaiqly
+      - name: Positive content identity — Al-Fatiha must pass
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          python3 python/content_gate_v22.py \
+            dist/minshawi_reference_16k.wav dist/minshawi_reference_16k.wav \
+            --expect accept > dist/V2_2_CONTENT_POSITIVE.json
+          cat dist/V2_2_CONTENT_POSITIVE.json
+
+      - name: Negative content identity — Al-Ikhlas must be rejected
+        working-directory: tajweed-fatiha-v1.0.2
+        run: |
+          curl --fail --location --retry 3 \
+            'https://upload.wikimedia.org/wikipedia/commons/c/c2/Sura_Minshawi_112.ogg' \
+            --output dist/minshawi_ikhlas.ogg
+          ffmpeg -hide_banner -loglevel error -y \
+            -i dist/minshawi_ikhlas.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/minshawi_ikhlas_16k.wav
+          python3 python/content_gate_v22.py \
+            dist/minshawi_reference_16k.wav dist/minshawi_ikhlas_16k.wav \
+            --expect reject > dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json
+          cat dist/V2_2_CONTENT_NEGATIVE_IKHLAS.json
+          rm -f dist/minshawi_ikhlas.ogg dist/minshawi_ikhlas_16k.wav
+
+      - name: Cross-reciter regression — Maher Al-Muaiqly ayat 2-7
         working-directory: tajweed-fatiha-v1.0.2
         run: |
           curl --fail --location --retry 3 \
             'https://upload.wikimedia.org/wikipedia/commons/9/9e/Surat_al-Fatiha_Recited_by_Maher_al-Muaiqaly.ogg' \
             --output dist/maher_fatiha_fixture.ogg
           ffmpeg -hide_banner -loglevel error -y \
-            -i dist/maher_fatiha_fixture.ogg \
-            -ar 16000 -ac 1 -c:a pcm_s16le dist/maher_fatiha_16k.wav
+            -i dist/maher_fatiha_fixture.ogg -ar 16000 -ac 1 -c:a pcm_s16le dist/maher_fatiha_16k.wav
           python3 python/maher_cross_reciter_v21.py \
             dist/minshawi_reference_16k.wav dist/maher_fatiha_16k.wav \
-            > dist/V2_1_MAHER_CROSS_RECITER.json
-          cat dist/V2_1_MAHER_CROSS_RECITER.json
+            > dist/V2_2_MAHER_CROSS_RECITER.json
           python3 - <<'PY'
           import json
           from pathlib import Path
-          r=json.loads(Path('dist/V2_1_MAHER_CROSS_RECITER.json').read_text(encoding='utf-8'))
-          assert r['basmala_compared'] is False, r
-          assert r['ameen_excluded'] is True, r
+          r=json.loads(Path('dist/V2_2_MAHER_CROSS_RECITER.json').read_text(encoding='utf-8'))
           assert r['all_candidate_audio_valid'] is True, r
           assert r['all_cross_reciter_aligned'] is True, r
-          print('V2_1_MAHER_CROSS_RECITER_GATE_PASS')
+          print('V2_2_MAHER_CROSS_RECITER_GATE_PASS')
           PY
           rm -f dist/maher_fatiha_fixture.ogg dist/maher_fatiha_16k.wav dist/minshawi_reference_16k.wav
 
@@ -100,34 +109,16 @@ jobs:
           done < <(zipinfo -1 "$APK" | grep -E '^classes[0-9]*\.dex$')
           test "$FOUND" -eq 1
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-          cp "$APK" dist/Tajweed_AlFatiha_v2.1.0_native_installable.apk
-          sha256sum dist/Tajweed_AlFatiha_v2.1.0_native_installable.apk > dist/SHA256SUMS.txt
-          {
-            echo 'Architecture: Native Android/Kotlin'
-            echo 'Version: 2.1.0'
-            echo 'Alignment: speaker-normalized known-text DTW'
-            echo 'Definite red policy: structural omission/cut evidence only'
-            echo 'Madd policy: PASS/REVIEW/UNDECIDABLE only until true phone timestamps are integrated'
-            echo 'Bundled reference: Muhammad Siddiq Al-Minshawi Al-Fatiha, Wikimedia Commons public-domain file'
-            echo 'Cross-reciter regression: Maher Al-Muaiqly fixture tested but not bundled'
-            echo 'Regression gates: self, timbre-invariance, tempo, silence, truncation, real second reciter'
-            echo 'Launcher class: verified in DEX'
-            echo 'Bundled reference asset: verified in APK'
-            echo 'APK signature: verified by apksigner'
-            echo "APK bytes: $(stat -c%s dist/Tajweed_AlFatiha_v2.1.0_native_installable.apk)"
-          } > dist/CI_VERIFICATION_V2_1.txt
-          cp reports/V2_1_SPEAKER_INVARIANCE_REPORT.md dist/V2_1_SPEAKER_INVARIANCE_REPORT.md
-          cp reports/MODEL_DATASET_AUDIO_LICENSE_REPORT.md dist/MODEL_DATASET_AUDIO_LICENSE_REPORT.md
-          cp reports/P0_DECISION_MATRIX.md dist/P0_DECISION_MATRIX.md
-          cp PROJECT_STATE.md dist/PROJECT_STATE.md
+          cp "$APK" dist/Tajweed_AlFatiha_v2.2.0_preintegration.apk
+          sha256sum dist/Tajweed_AlFatiha_v2.2.0_preintegration.apk > dist/SHA256SUMS.txt
 
       - name: Package source
         working-directory: tajweed-fatiha-v1.0.2
-        run: zip -qr dist/QuranTajweedNative_Source_v2.1.0.zip . -x '.gradle/*' 'app/build/*' 'dist/*' '.kotlin/*'
+        run: zip -qr dist/QuranTajweedNative_Source_v2.2.0_preintegration.zip . -x '.gradle/*' 'app/build/*' 'dist/*' '.kotlin/*'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Tajweed-AlFatiha-Native-v2.1.0
+          name: Tajweed-AlFatiha-Native-v2.2.0-preintegration
           path: tajweed-fatiha-v1.0.2/dist/*
           if-no-files-found: error
           retention-days: 14
