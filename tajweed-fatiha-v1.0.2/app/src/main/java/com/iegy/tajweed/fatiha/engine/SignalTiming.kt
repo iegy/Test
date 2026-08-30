@@ -41,9 +41,9 @@ internal fun phoneDiagnostics(phones: List<String>, refFrames: List<FrameFeature
     if (phones.isEmpty()) return emptyList()
     val weights = phones.map { if (it.contains('ː')) 2.2 else 1.0 }; val rb = proportionalBounds(weights, rs, re); val ob = proportionalBounds(weights, os, oe)
     return phones.mapIndexed { i, phone ->
-        val d = regionDistance(refFrames, obsFrames, rb[i], rb[i + 1], ob[i], ob[i + 1]); val conf = (wordConfidence * (1.0 - d / 1.3).coerceIn(0.0, 1.0)).coerceIn(0.0, 1.0)
-        val status = when { conf < .32 -> Status.UNDECIDABLE; d < .52 -> Status.PASS; else -> Status.REVIEW }
-        val note = when (status) { Status.PASS -> "المنطقة الصوتية متقاربة مع المرجع."; Status.REVIEW -> "اختلاف صوتي نسبي؛ ليس تشخيصًا قطعيًا للمخرج."; else -> "الثقة غير كافية للحكم على هذا الصوت." }
+        val d = regionDistance(refFrames, obsFrames, rb[i], rb[i + 1], ob[i], ob[i + 1]); val conf = (wordConfidence * (1.0 - d / 1.75).coerceIn(0.0, 1.0)).coerceIn(0.0, 1.0)
+        val status = when { conf < .30 -> Status.UNDECIDABLE; d < .78 -> Status.PASS; else -> Status.REVIEW }
+        val note = when (status) { Status.PASS -> "المنطقة الصوتية متقاربة بعد تطبيع اختلاف القارئ."; Status.REVIEW -> "اختلاف صوتي نسبي بعد التطبيع؛ ليس تشخيصًا قطعيًا للمخرج."; else -> "الثقة غير كافية للحكم على هذا الصوت." }
         PhoneDiagnostic(phone, ob[i].toLong(), ob[i + 1].toLong(), round3(d), status, round2(conf), note)
     }
 }
