@@ -7,7 +7,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 object SignalEngine {
-    const val MODEL_VERSION = "native-known-text-align-v2.1.0-speaker-normalized"
+    const val MODEL_VERSION = "native-known-text-align-v2.2.0-hierarchical"
 
     fun makeReference(input: PcmAudio, source: String): ReferenceData {
         val audio = preprocessAudio(input)
@@ -17,7 +17,17 @@ object SignalEngine {
         return ReferenceData(audio, frames, vad, source)
     }
 
-    fun analyze(input: PcmAudio, ayah: AyahSpec, reference: ReferenceData): AnalysisResult {
+    /**
+     * Public entry point. A single selected ayah keeps the local v2.1 alignment
+     * path, while the whole surah is explicitly decomposed into seven local
+     * alignments by [FullSurahAnalyzer]. This prevents one bad global DTW warp
+     * from manufacturing red words near a surah-level boundary.
+     */
+    fun analyze(input: PcmAudio, ayah: AyahSpec, reference: ReferenceData): AnalysisResult =
+        if (ayah.number == 0) FullSurahAnalyzer.analyze(input, reference)
+        else analyzeSingle(input, ayah, reference)
+
+    internal fun analyzeSingle(input: PcmAudio, ayah: AyahSpec, reference: ReferenceData): AnalysisResult {
         val started = System.currentTimeMillis()
         val audio = preprocessAudio(input)
         val frames = extractFrames(audio.samples, audio.sampleRate)
@@ -153,7 +163,7 @@ object SignalEngine {
         if (speechRatio < .55) issues += "مدة الكلام أقصر بكثير من المرجع."
         if (speechRatio > 2.2) issues += "القراءة أبطأ بكثير من المرجع؛ خُفّضت الثقة في القياسات الزمنية."
         if (confidence < .38) issues += "الثقة العامة منخفضة؛ النتيجة محافظة ولا تُعد حكمًا نهائيًا على التجويد."
-        issues += "المحاذاة الصوتية في v2.1.0 مطبَّعة لتقليل تأثير اختلاف هوية ونبرة القارئ."
+        issues += "المحاذاة الصوتية مطبَّعة لتقليل تأثير اختلاف هوية ونبرة القارئ."
 
         return AnalysisResult(
             true, overall, title, round2(confidence), null, null, audio.durationMs, vad.speechMs.toLong(), round1(vad.snrDb), round4(clipRatio), harakahMs.toLong(),
@@ -163,11 +173,12 @@ object SignalEngine {
         )
     }
 
-    private fun limitations() = listOf(
+    internal fun limitations() = listOf(
         "هذه النسخة تستخدم محاذاة صوتية مطبَّعة للنص المعروف وليست بديلًا عن شيخ متقن.",
+        "عند تحليل الفاتحة كاملة، تُقسم المحاولة إلى سبع محاذيات محلية قبل تقييم الكلمات لتقليل أخطاء الحدود.",
         "الفونيمات المعروضة هي المتوقع نظريًا؛ لا ندعي أن التطبيق تعرف عليها كفئات مستقلة حتى إدماج نموذج فونيمي قرآني مُثبت.",
         "دقائق المخارج والصفات والغنة والقلقلة لا تُحكم حكمًا قطعيًا دون نموذج متخصص وبيانات متعلمين حقيقية.",
         "المد الحالي تقدير زمني محافظ؛ لا يصدر FAIL منفردًا قبل توفر محاذاة فونيمية حقيقية.",
-        "اللون الأحمر في v2.1.0 محجوز لدليل بنيوي قوي مثل حذف/قطع واضح عالي الثقة."
+        "اللون الأحمر في v2.2.0 محجوز لدليل بنيوي شديد القوة، والحدود غير الموثوقة تُعرض كغير محسومة."
     )
 }
