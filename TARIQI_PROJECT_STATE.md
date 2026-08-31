@@ -78,3 +78,25 @@ Before a release APK is called production-ready:
 
 ## Active branch
 `codex/tariqi-android-v1`
+
+## Build recovery and integration status — 2026-08-31
+- The previous Kotlin blocker in `Mp3QuranClient.kt` was diagnosed from the reconstructed real source, not guessed.
+- Root cause: Kotlin Elvis/operator precedence left the `refresh=true` branch nullable.
+- Verified fix: wrap the complete `if` expression before the `?:` asset fallback:
+  `val raw = (if (refresh) runCatching { fetch(API) }.getOrNull() else null) ?: ...`
+- GitHub Actions run `33388245544` / run #20 passed `:app:assembleDebug` and produced the base build kit.
+- GitHub Actions run `33388986286` / run #22 also passed after adding the validated AlQuran Cloud `quran-tajweed` dataset.
+- The CI validation rejects the Quran dataset unless it contains exactly 114 surahs and 6236 ayat.
+- The recovered user-supplied Quran-Lab engine files were checked again and all six SHA-256 values exactly matched the hashes recorded above.
+- A full test APK was assembled with:
+  - `quran-tajweed.json` (114 / 6236),
+  - `ordered_quran_phonemes.json` (6236, 1:1 through 114:6),
+  - the 72,705,392-byte INT8 ONNX model,
+  - tokens/config/text-to-phoneme/license,
+  - sherpa-onnx / ONNX Runtime native arm64-v8a libraries.
+- The ONNX and Quran/AI JSON assets were verified stored uncompressed in the assembled APK; the model asset offset is 4-byte aligned.
+- The assembled APK passed `apksigner verify` using APK Signature Scheme v2 and v3 and exposes `com.iegy.tariqi.MainActivity` as launcher.
+- Current assembled test APK SHA-256: `e2a9ad6651727ed208d832411e642a3f21967e06ffce4d0ef9d9f3e5569e2843`.
+- This APK is **test-signed**, because no production signing keystore was supplied. Do not call it a store/release signing build.
+- No physical-device runtime test has yet been performed in this recovery session. Device installation/launch, model initialization and real-recitation regression tests remain release gates.
+- The current workflow still applies the exact guarded one-line `Mp3QuranClient` fix after reconstructing `.ci/src2.part-*`. Canonical re-packing of the source chunks can be done later as a cleanup step; do not destabilize the now-green build solely to remove this guarded patch.
