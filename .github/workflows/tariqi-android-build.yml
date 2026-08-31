@@ -14,14 +14,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Reconstruct Tariqi source
+      - name: Reconstruct Tariqi v1.1 source
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/tariqi-src /tmp/tariqi-source.zip
           mkdir -p /tmp/tariqi-src
-          cat .ci/src2.part-* | base64 -d > /tmp/tariqi-source.zip
-          echo "070047fb7a7c526001cc76e0a5fc3f1ef3834d2d596be296c63290cb892afa6b  /tmp/tariqi-source.zip" | sha256sum -c -
+          cat .ci/v11x.part-* | base64 -d > /tmp/tariqi-source.zip
+          echo "c1464512d31b0022ef0f500270d98da2eea27f03b1ae1e0f481d0557a1bdbe9d  /tmp/tariqi-source.zip" | sha256sum -c -
           unzip -tq /tmp/tariqi-source.zip
           unzip -q /tmp/tariqi-source.zip -d /tmp/tariqi-src
           if [ -d /tmp/tariqi-src/tariqi-android ]; then
@@ -29,22 +29,6 @@ jobs:
           else
             echo "PROJECT_DIR=/tmp/tariqi-src" >> "$GITHUB_ENV"
           fi
-
-      - name: Patch Mp3Quran client nullable fallback
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("/tmp/tariqi-src/tariqi-android/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt")
-          s = p.read_text(encoding="utf-8")
-          old = '        val raw = if (refresh) runCatching { fetch(API) }.getOrNull() else null'
-          new = '        val raw = (if (refresh) runCatching { fetch(API) }.getOrNull() else null)'
-          if s.count(old) != 1:
-              raise SystemExit(f"Expected exactly one Mp3QuranClient target line, found {s.count(old)}")
-          p.write_text(s.replace(old, new, 1), encoding="utf-8")
-          PY
-          nl -ba "$PROJECT_DIR/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt" | sed -n '15,32p'
 
       - name: Fetch and validate full Tajweed Quran data
         shell: bash
@@ -118,17 +102,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/tariqi-output/build-tools/lib
-          cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" /tmp/tariqi-output/Tariqi-base-debug.apk
+          cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" /tmp/tariqi-output/Tariqi-v1.1-base-debug.apk
           cp "$ANDROID_HOME/build-tools/35.0.0/zipalign" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/aapt2" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" /tmp/tariqi-output/build-tools/lib/
           cp -r "$PROJECT_DIR" /tmp/tariqi-output/source
-          sha256sum /tmp/tariqi-output/Tariqi-base-debug.apk > /tmp/tariqi-output/BASE_APK_SHA256.txt
+          sha256sum /tmp/tariqi-output/Tariqi-v1.1-base-debug.apk > /tmp/tariqi-output/BASE_APK_SHA256.txt
 
-      - name: Upload Tariqi build kit
+      - name: Upload Tariqi v1.1 build kit
         uses: actions/upload-artifact@v4
         with:
-          name: tariqi-android-build-kit
+          name: tariqi-v1.1-android-build-kit
           path: /tmp/tariqi-output
           retention-days: 14
