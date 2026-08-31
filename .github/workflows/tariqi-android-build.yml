@@ -14,11 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Reconstruct Tariqi v1.1 source
+      - name: Reconstruct Tariqi v1.1 base source
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/tariqi-src /tmp/tariqi-source.zip
+          rm -rf /tmp/tariqi-src /tmp/tariqi-source.zip /tmp/tariqi-v12-overlay.zip
           mkdir -p /tmp/tariqi-src
           cat .ci/v11x.part-00 .ci/v11fix01s-00 .ci/v11fix01s-01 .ci/v11fix01s-02 .ci/v11fix01s-03 .ci/v11fix01s-04 .ci/v11x.part-02 .ci/v11x.part-03 .ci/v11x.part-04 .ci/v11x.part-05 | base64 -d > /tmp/tariqi-source.zip
           echo "c1464512d31b0022ef0f500270d98da2eea27f03b1ae1e0f481d0557a1bdbe9d  /tmp/tariqi-source.zip" | sha256sum -c -
@@ -29,6 +29,17 @@ jobs:
           else
             echo "PROJECT_DIR=/tmp/tariqi-src" >> "$GITHUB_ENV"
           fi
+
+      - name: Apply verified Tariqi v1.2 overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .ci/v12-overlay.part-* | base64 -d > /tmp/tariqi-v12-overlay.zip
+          echo "654e95a987bc59ee25bb85befc51439c72bc05c5414e6d457efdc59fa12a45f6  /tmp/tariqi-v12-overlay.zip" | sha256sum -c -
+          unzip -tq /tmp/tariqi-v12-overlay.zip
+          unzip -oq /tmp/tariqi-v12-overlay.zip -d "$PROJECT_DIR"
+          grep -F 'versionName = "1.2.0"' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -F 'versionCode = 3' "$PROJECT_DIR/app/build.gradle.kts"
 
       - name: Fetch and validate full Tajweed Quran data
         shell: bash
@@ -53,10 +64,10 @@ jobs:
           PY
           sha256sum "$PROJECT_DIR/app/src/main/assets/quran-tajweed.json"
 
-      - name: Upload reconstructed source diagnostic
+      - name: Upload reconstructed v1.2 source diagnostic
         uses: actions/upload-artifact@v4
         with:
-          name: tariqi-reconstructed-source
+          name: tariqi-v1.2-reconstructed-source
           path: ${{ env.PROJECT_DIR }}
           retention-days: 1
 
@@ -90,29 +101,29 @@ jobs:
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.2/sherpa-onnx-1.13.2.aar"
           echo "aa5505c0ec4f8bdaee5f214a64ba3012be64f2aecc022e82a64f33392b8dd245  $PROJECT_DIR/app/libs/sherpa-onnx-1.13.2.aar" | sha256sum -c -
 
-      - name: Compile debug APK
+      - name: Compile Tariqi v1.2 debug APK
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
           gradle --no-daemon --stacktrace :app:assembleDebug
 
-      - name: Prepare build outputs
+      - name: Prepare v1.2 build outputs
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p /tmp/tariqi-output/build-tools/lib
-          cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" /tmp/tariqi-output/Tariqi-v1.1-base-debug.apk
+          cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" /tmp/tariqi-output/Tariqi-v1.2-base-debug.apk
           cp "$ANDROID_HOME/build-tools/35.0.0/zipalign" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/aapt2" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" /tmp/tariqi-output/build-tools/lib/
           cp -r "$PROJECT_DIR" /tmp/tariqi-output/source
-          sha256sum /tmp/tariqi-output/Tariqi-v1.1-base-debug.apk > /tmp/tariqi-output/BASE_APK_SHA256.txt
+          sha256sum /tmp/tariqi-output/Tariqi-v1.2-base-debug.apk > /tmp/tariqi-output/BASE_APK_SHA256.txt
 
-      - name: Upload Tariqi v1.1 build kit
+      - name: Upload Tariqi v1.2 build kit
         uses: actions/upload-artifact@v4
         with:
-          name: tariqi-v1.1-android-build-kit
+          name: tariqi-v1.2-android-build-kit
           path: /tmp/tariqi-output
           retention-days: 14
