@@ -113,8 +113,6 @@ jobs:
       - name: Cross-reciter hierarchical regression — Maher Al-Muaiqly
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          # This legacy v2.1 segmentation regression was calibrated on the Commons
-          # recording. Keep it isolated from the independent MP3 used by the CTC gate.
           curl --fail --location --retry 3 \
             'https://upload.wikimedia.org/wikipedia/commons/9/9e/Surat_al-Fatiha_Recited_by_Maher_al-Muaiqaly.ogg' \
             --output dist/ctc/maher_hierarchical_fixture.ogg
@@ -136,11 +134,22 @@ jobs:
       - name: Security source gate
         working-directory: tajweed-fatiha-v1.0.2
         run: |
-          ! grep -R --line-number --fixed-string 'android.permission.INTERNET' app/src/main || {
-            echo 'INTERNET permission is forbidden in the offline prototype'; exit 1; }
-          ! grep -R --line-number -E 'http://|https://' app/src/main/java || {
-            echo 'Runtime network URL found in Android source'; exit 1; }
+          if grep -R --line-number -E 'http://|https://' app/src/main/java; then
+            echo 'Runtime network URL found in Android Kotlin/Java source'; exit 1
+          fi
           grep -F 'android.permission.RECORD_AUDIO' app/src/main/AndroidManifest.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          p='app/src/main/AndroidManifest.xml'
+          root=ET.parse(p).getroot()
+          A='{http://schemas.android.com/apk/res/android}name'
+          T='{http://schemas.android.com/tools}node'
+          found={el.get(A):el.get(T) for el in root.findall('uses-permission')}
+          for perm in ('android.permission.INTERNET','android.permission.ACCESS_NETWORK_STATE'):
+              assert found.get(perm)=='remove', (perm, found.get(perm))
+          assert 'android.permission.RECORD_AUDIO' in found, found
+          print('TRANSITIVE_NETWORK_PERMISSIONS_EXPLICITLY_REMOVED')
+          PY
           grep -F 'MODEL_SHA256 = "dc7373e31802a8691dd546a8883e3f330e33a01842e0e1121442ebe71601fdbc"' \
             app/src/main/java/com/iegy/tajweed/fatiha/engine/ContentIdentityGate.kt
           echo 'V2_2_SOURCE_SECURITY_GATE_PASS'
@@ -170,7 +179,12 @@ jobs:
           test "$FOUND_MAIN" -eq 1
           test "$FOUND_GATE" -eq 1
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump permissions "$APK" | tee dist/APK_PERMISSIONS.txt
-          ! grep -F 'android.permission.INTERNET' dist/APK_PERMISSIONS.txt
+          if grep -Fq 'android.permission.INTERNET' dist/APK_PERMISSIONS.txt; then
+            echo 'FINAL APK unexpectedly contains INTERNET permission'; exit 1
+          fi
+          if grep -Fq 'android.permission.ACCESS_NETWORK_STATE' dist/APK_PERMISSIONS.txt; then
+            echo 'FINAL APK unexpectedly contains ACCESS_NETWORK_STATE permission'; exit 1
+          fi
           grep -F 'android.permission.RECORD_AUDIO' dist/APK_PERMISSIONS.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | tee dist/APK_SIGNATURE.txt
           cp "$APK" dist/Tajweed_AlFatiha_v2.2.0_FINAL.apk
@@ -184,7 +198,8 @@ jobs:
           cat > dist/V2_2_SECURITY_REPORT.md <<'EOF'
           # Al-Fatiha v2.2.0 Security Review
 
-          - Android manifest contains no INTERNET permission.
+          - The final merged APK contains neither INTERNET nor ACCESS_NETWORK_STATE permission.
+          - Network permissions contributed transitively by ONNX Runtime are explicitly removed during manifest merge.
           - Learner audio is processed locally; no backend/API is used at runtime.
           - Microphone permission is requested only for direct recording.
           - Imported audio uses Android's system document picker and a 30 MB input guard.
@@ -207,7 +222,9 @@ jobs:
           - cross-reciter hierarchical alignment regression: PASS
           - Android compile/package: PASS
           - content-model SHA-256 inside APK: PASS
-          - APK INTERNET permission absent: PASS
+          - final APK INTERNET permission absent: PASS
+          - final APK ACCESS_NETWORK_STATE permission absent: PASS
+          - final APK RECORD_AUDIO permission present: PASS
           - launcher/content-gate classes found: PASS
           - APK signature verification: PASS
           EOF
