@@ -20,7 +20,7 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/tariqi-src /tmp/tariqi-source.zip
           mkdir -p /tmp/tariqi-src
-          cat .ci/v11x.part-* | base64 -d > /tmp/tariqi-source.zip
+          cat .ci/v11x.part-00 .ci/v11fix01s-00 .ci/v11fix01s-01 .ci/v11fix01s-02 .ci/v11fix01s-03 .ci/v11fix01s-04 .ci/v11x.part-02 .ci/v11x.part-03 .ci/v11x.part-04 .ci/v11x.part-05 | base64 -d > /tmp/tariqi-source.zip
           echo "c1464512d31b0022ef0f500270d98da2eea27f03b1ae1e0f481d0557a1bdbe9d  /tmp/tariqi-source.zip" | sha256sum -c -
           unzip -tq /tmp/tariqi-source.zip
           unzip -q /tmp/tariqi-source.zip -d /tmp/tariqi-src
