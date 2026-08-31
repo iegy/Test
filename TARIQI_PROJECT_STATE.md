@@ -100,3 +100,34 @@ Before a release APK is called production-ready:
 - This APK is **test-signed**, because no production signing keystore was supplied. Do not call it a store/release signing build.
 - No physical-device runtime test has yet been performed in this recovery session. Device installation/launch, model initialization and real-recitation regression tests remain release gates.
 - The current workflow still applies the exact guarded one-line `Mp3QuranClient` fix after reconstructing `.ci/src2.part-*`. Canonical re-packing of the source chunks can be done later as a cleanup step; do not destabilize the now-green build solely to remove this guarded patch.
+
+## v1.1 feature pass and successful build — 2026-08-31
+- Version: `1.1.0` / versionCode `2`.
+- Requested v1.1 source additions compiled successfully:
+  - local WAV persistence and `استمع لتلاوتي`,
+  - continuous recitation correction for multiple ayat and page ranges,
+  - conservative live word-position tracking while recording,
+  - dedicated Mushaf page reader in addition to ayah/surah mode,
+  - background playback via foreground `PlaybackService` with media controls,
+  - dedicated audio-player screen,
+  - expanded Tajweed Teacher with lesson/training links into correction,
+  - advanced Tasbih with custom dhikr, targets, +1/+10, undo, reset and delete,
+  - About/Credits screen containing the requested developer credit, unseen-prayer request and thanks to Eng. Salah Ghanem.
+- Canonical v1.1 source ZIP SHA-256: `c1464512d31b0022ef0f500270d98da2eea27f03b1ae1e0f481d0557a1bdbe9d`.
+- GitHub source reconstruction originally exposed one truncated Base64 chunk. The exact missing source segment was restored as small verified slices rather than guessing/rebuilding source content.
+- Workflow commit: `b02bc518446ad4ff6cfc500416c8d9bf4ffdde4c`.
+- GitHub Actions run #42 / run ID `33409975481` completed **successfully**, including source SHA validation, Quran 114/6236 validation, sherpa runtime verification and `:app:assembleDebug`.
+- Final locally assembled full v1.1 test APK includes the original six verified Quran-Lab engine assets and removes `model.placeholder`.
+- Re-validation from inside the final APK:
+  - Quran: 114 surahs / 6236 ayat,
+  - ordered phoneme references: 6236,
+  - quran_text2phoneme: 9112,
+  - tokens: 251,
+  - all six engine SHA-256 values match the canonical hashes above,
+  - four required arm64-v8a sherpa/onnxruntime native libraries are present,
+  - all stored/uncompressed APK entries are 4-byte aligned.
+- Final v1.1 full test APK SHA-256: `88e3853558881b22f2822b530eb447c104d9b6984b55b84ea1c52843c9ea82da`.
+- Final test signing verifies with APK Signature Scheme v2 and v3. It is still a **test signing identity**, not a production key.
+- Important limitation: the current per-error `اسمع الصحيح` button plays the reference ayah containing the detected word; exact word-boundary audio clipping is not yet guaranteed.
+- The bespoke new Tariqi logo requested by the user has not yet been approved/integrated; current launcher resources remain in this v1.1 functional build.
+- A physical Android-device regression remains mandatory before calling v1.1 production-ready.
