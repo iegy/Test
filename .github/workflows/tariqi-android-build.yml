@@ -38,16 +38,10 @@ jobs:
           from pathlib import Path
           p = Path("/tmp/tariqi-src/tariqi-android/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt")
           s = p.read_text(encoding="utf-8")
-          old = '''        val raw = if (refresh) runCatching { fetch(API) }.getOrNull() else null
-              ?: runCatching { context.assets.open("mp3quran_reciters.json").bufferedReader().use { it.readText() } }.getOrNull()
-              ?: return emptyList()
-          '''
-          new = '''        val raw = (if (refresh) runCatching { fetch(API) }.getOrNull() else null)
-              ?: runCatching { context.assets.open("mp3quran_reciters.json").bufferedReader().use { it.readText() } }.getOrNull()
-              ?: return emptyList()
-          '''
-          if old not in s:
-              raise SystemExit("Expected Mp3QuranClient block not found; refusing blind patch")
+          old = '        val raw = if (refresh) runCatching { fetch(API) }.getOrNull() else null'
+          new = '        val raw = (if (refresh) runCatching { fetch(API) }.getOrNull() else null)'
+          if s.count(old) != 1:
+              raise SystemExit(f"Expected exactly one Mp3QuranClient target line, found {s.count(old)}")
           p.write_text(s.replace(old, new, 1), encoding="utf-8")
           PY
           nl -ba "$PROJECT_DIR/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt" | sed -n '15,32p'
