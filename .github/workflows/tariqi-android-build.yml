@@ -30,18 +30,27 @@ jobs:
             echo "PROJECT_DIR=/tmp/tariqi-src" >> "$GITHUB_ENV"
           fi
 
-      - name: Inspect Mp3Quran client source
+      - name: Patch Mp3Quran client nullable fallback
         shell: bash
         run: |
           set -euo pipefail
-          nl -ba "$PROJECT_DIR/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt" | sed -n '1,120p'
-
-      - name: Upload Mp3Quran client diagnostic source
-        uses: actions/upload-artifact@v4
-        with:
-          name: tariqi-mp3quranclient-source
-          path: ${{ env.PROJECT_DIR }}/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt
-          retention-days: 1
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("/tmp/tariqi-src/tariqi-android/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt")
+          s = p.read_text(encoding="utf-8")
+          old = '''        val raw = if (refresh) runCatching { fetch(API) }.getOrNull() else null
+              ?: runCatching { context.assets.open("mp3quran_reciters.json").bufferedReader().use { it.readText() } }.getOrNull()
+              ?: return emptyList()
+          '''
+          new = '''        val raw = (if (refresh) runCatching { fetch(API) }.getOrNull() else null)
+              ?: runCatching { context.assets.open("mp3quran_reciters.json").bufferedReader().use { it.readText() } }.getOrNull()
+              ?: return emptyList()
+          '''
+          if old not in s:
+              raise SystemExit("Expected Mp3QuranClient block not found; refusing blind patch")
+          p.write_text(s.replace(old, new, 1), encoding="utf-8")
+          PY
+          nl -ba "$PROJECT_DIR/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt" | sed -n '15,32p'
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
