@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Reconstruct Tariqi source
         shell: bash
@@ -20,12 +20,8 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/tariqi-src /tmp/tariqi-source.zip
           mkdir -p /tmp/tariqi-src
-          if [ -f .ci/tariqi-source.zip.b64 ]; then
-            base64 -d .ci/tariqi-source.zip.b64 > /tmp/tariqi-source.zip || true
-          fi
-          if ! unzip -tq /tmp/tariqi-source.zip >/dev/null 2>&1; then
-            cat .ci/tariqi-source.part-* | base64 -d > /tmp/tariqi-source.zip
-          fi
+          cat .ci/src2.part-* | base64 -d > /tmp/tariqi-source.zip
+          echo "070047fb7a7c526001cc76e0a5fc3f1ef3834d2d596be296c63290cb892afa6b  /tmp/tariqi-source.zip" | sha256sum -c -
           unzip -tq /tmp/tariqi-source.zip
           unzip -q /tmp/tariqi-source.zip -d /tmp/tariqi-src
           if [ -d /tmp/tariqi-src/tariqi-android ]; then
@@ -79,6 +75,7 @@ jobs:
           cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" /tmp/tariqi-output/Tariqi-base-debug.apk
           cp "$ANDROID_HOME/build-tools/35.0.0/zipalign" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" /tmp/tariqi-output/build-tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/aapt2" /tmp/tariqi-output/build-tools/
           cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" /tmp/tariqi-output/build-tools/lib/
           cp -r "$PROJECT_DIR" /tmp/tariqi-output/source
           sha256sum /tmp/tariqi-output/Tariqi-base-debug.apk > /tmp/tariqi-output/BASE_APK_SHA256.txt
