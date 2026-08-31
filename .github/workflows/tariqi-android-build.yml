@@ -41,6 +41,21 @@ jobs:
           grep -F 'versionName = "1.2.0"' "$PROJECT_DIR/app/build.gradle.kts"
           grep -F 'versionCode = 3' "$PROJECT_DIR/app/build.gradle.kts"
 
+      - name: Install final Tariqi launcher logo
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PROJECT_DIR/app/src/main/res/drawable-nodpi"
+          base64 -d .ci/tariqi-logo-final.png.b64 > "$PROJECT_DIR/app/src/main/res/drawable-nodpi/tariqi_logo.png"
+          echo "a6c8a95e2efd6c51c3acf0e2483c64fb3e278d0ba3bd3357efec5037a869af0e  $PROJECT_DIR/app/src/main/res/drawable-nodpi/tariqi_logo.png" | sha256sum -c -
+          cat > "$PROJECT_DIR/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/ic_launcher_background" />
+              <foreground android:drawable="@drawable/tariqi_logo" />
+          </adaptive-icon>
+          EOF
+
       - name: Fetch and validate full Tajweed Quran data
         shell: bash
         run: |
