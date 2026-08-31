@@ -46,6 +46,29 @@ jobs:
           PY
           nl -ba "$PROJECT_DIR/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt" | sed -n '15,32p'
 
+      - name: Fetch and validate full Tajweed Quran data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PROJECT_DIR/app/src/main/assets"
+          curl -L --fail --retry 4 --retry-delay 2 \
+            -o "$PROJECT_DIR/app/src/main/assets/quran-tajweed.json" \
+            "https://api.alquran.cloud/v1/quran/quran-tajweed"
+          python3 - <<'PY'
+          import json, os
+          p = os.environ["PROJECT_DIR"] + "/app/src/main/assets/quran-tajweed.json"
+          with open(p, "r", encoding="utf-8") as f:
+              root = json.load(f)
+          if root.get("code") != 200:
+              raise SystemExit(f"AlQuran Cloud returned code={root.get('code')}")
+          surahs = root.get("data", {}).get("surahs", [])
+          ayahs = sum(len(s.get("ayahs", [])) for s in surahs)
+          if len(surahs) != 114 or ayahs != 6236:
+              raise SystemExit(f"Unexpected Quran dataset: surahs={len(surahs)} ayahs={ayahs}")
+          print(f"Validated quran-tajweed: surahs={len(surahs)} ayahs={ayahs}")
+          PY
+          sha256sum "$PROJECT_DIR/app/src/main/assets/quran-tajweed.json"
+
       - name: Upload reconstructed source diagnostic
         uses: actions/upload-artifact@v4
         with:
