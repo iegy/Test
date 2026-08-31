@@ -46,6 +46,13 @@ jobs:
           PY
           nl -ba "$PROJECT_DIR/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt" | sed -n '15,32p'
 
+      - name: Upload reconstructed source diagnostic
+        uses: actions/upload-artifact@v4
+        with:
+          name: tariqi-reconstructed-source
+          path: ${{ env.PROJECT_DIR }}
+          retention-days: 1
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
