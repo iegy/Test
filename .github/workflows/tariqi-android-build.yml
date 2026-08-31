@@ -30,6 +30,12 @@ jobs:
             echo "PROJECT_DIR=/tmp/tariqi-src" >> "$GITHUB_ENV"
           fi
 
+      - name: Inspect Mp3Quran client source
+        shell: bash
+        run: |
+          set -euo pipefail
+          nl -ba "$PROJECT_DIR/app/src/main/java/com/iegy/tariqi/media/Mp3QuranClient.kt" | sed -n '1,120p'
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
