@@ -41,18 +41,40 @@ jobs:
           grep -F 'versionName = "1.2.0"' "$PROJECT_DIR/app/build.gradle.kts"
           grep -F 'versionCode = 3' "$PROJECT_DIR/app/build.gradle.kts"
 
-      - name: Install final Tariqi launcher logo
+      - name: Install final Tariqi vector launcher logo
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$PROJECT_DIR/app/src/main/res/drawable-nodpi"
-          base64 -d .ci/tariqi-logo-final.png.b64 > "$PROJECT_DIR/app/src/main/res/drawable-nodpi/tariqi_logo.png"
-          echo "a6c8a95e2efd6c51c3acf0e2483c64fb3e278d0ba3bd3357efec5037a869af0e  $PROJECT_DIR/app/src/main/res/drawable-nodpi/tariqi_logo.png" | sha256sum -c -
+          cat > "$PROJECT_DIR/app/src/main/res/drawable/ic_launcher_background.xml" <<'EOF'
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+              <solid android:color="#0B4A36" />
+          </shape>
+          EOF
+          cat > "$PROJECT_DIR/app/src/main/res/drawable/ic_launcher_foreground.xml" <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp" android:height="108dp"
+              android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#00000000" android:strokeColor="#D8B65C" android:strokeWidth="3.4"
+                  android:strokeLineCap="round" android:strokeLineJoin="round"
+                  android:pathData="M25,78 L25,45 C25,28 37,16 54,9 C71,16 83,28 83,45 L83,78" />
+              <path android:fillColor="#FFFFFF"
+                  android:pathData="M28,67 C37,63 46,64 54,70 L54,87 C46,81 38,79 28,81 Z" />
+              <path android:fillColor="#EAF6EF"
+                  android:pathData="M80,67 C71,63 62,64 54,70 L54,87 C62,81 70,79 80,81 Z" />
+              <path android:fillColor="#00000000" android:strokeColor="#D8B65C" android:strokeWidth="2"
+                  android:strokeLineCap="round" android:pathData="M54,70 L54,87" />
+              <path android:fillColor="#00000000" android:strokeColor="#8FD3AE" android:strokeWidth="5"
+                  android:strokeLineCap="round" android:pathData="M54,68 C54,59 48,55 50,47 C52,40 59,37 57,29" />
+              <path android:fillColor="#D8B65C" android:pathData="M54,22 l2.2,4.2 4.8,0.7 -3.5,3.4 0.8,4.8 -4.3,-2.2 -4.3,2.2 0.8,-4.8 -3.5,-3.4 4.8,-0.7 Z" />
+              <path android:fillColor="#8FD3AE" android:pathData="M35,49 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0" />
+              <path android:fillColor="#D8B65C" android:pathData="M69,49 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0" />
+          </vector>
+          EOF
           cat > "$PROJECT_DIR/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@drawable/ic_launcher_background" />
-              <foreground android:drawable="@drawable/tariqi_logo" />
+              <foreground android:drawable="@drawable/ic_launcher_foreground" />
           </adaptive-icon>
           EOF
 
