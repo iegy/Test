@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .ci/v12-overlay.part-* | base64 -d > /tmp/tariqi-v12-overlay.zip
+          cat .ci/v12fix00-00 .ci/v12fix00-01 .ci/v12fix00-02 .ci/v12fix00-03 .ci/v12fix00-04 .ci/v12fix00-05 .ci/v12-overlay.part-01 .ci/v12-overlay.part-02 .ci/v12-overlay.part-03 .ci/v12-overlay.part-04 .ci/v12fix05-00 .ci/v12fix05-01 .ci/v12fix05-02 .ci/v12fix05-03 .ci/v12fix05-04 .ci/v12fix05-05 .ci/v12-overlay.part-06 .ci/v12-overlay.part-07 .ci/v12-overlay.part-08 | base64 -d > /tmp/tariqi-v12-overlay.zip
           echo "654e95a987bc59ee25bb85befc51439c72bc05c5414e6d457efdc59fa12a45f6  /tmp/tariqi-v12-overlay.zip" | sha256sum -c -
           unzip -tq /tmp/tariqi-v12-overlay.zip
           unzip -oq /tmp/tariqi-v12-overlay.zip -d "$PROJECT_DIR"
